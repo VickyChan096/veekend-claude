@@ -66,7 +66,8 @@ app/
 | `index.html` + `js/index.js` | `pages/index.vue`（首頁輪播、文章列表、load more） |
 | `article.html` + `js/article.js` | `pages/article/[week].vue`（內文已解析成區塊，見「文章內文」段落） |
 | `articleEdit.html` | `pages/article/edit.vue` |
-| `about.html` / `login.html` / `result.html` | 同名 page（尚未重構，目前是 `PagePlaceholder`） |
+| `about.html` / `result.html` + `js/result.js` | `pages/about.vue` / `pages/result.vue` |
+| `login.html` | `pages/login.vue`（尚未重構，目前是 `PagePlaceholder`） |
 | `js/layout.js` + `js/aside.js` | `layouts/default.vue` + `components/layouts/` |
 | `css/_variable.scss` `_mixin.scss` | 併入 `app/assets/scss/preprocess.scss` |
 | `css/_reset.scss` `_layout.scss` | `app/assets/scss/main.scss` |
@@ -118,6 +119,14 @@ app/
 - 只有段落與清單項目保留行內 HTML（`<a>` `<u>` `<mark>` `<br>`），其餘一律走元件
 - 腳本遇到不認得的版型 class 會印警告並略過——跑完要看輸出有沒有警告
 
+## 文字欄位裡的行內 HTML
+
+`db.json` 的 `title` 與 `briefing` 夾雜 `<br>` 與 `<strong>`（legacy 用 innerHTML 塞所以會渲染）。
+
+- **顯示的地方用 `v-html`**——用 `{{ }}` 會把標籤當字面文字印出來（Phase 4 就踩過，Phase 7 才發現）
+- **`<title>`、meta description、`alt`、`aria-label` 用 `stripHtml()`**（`app/utils/common/text.ts`）
+- 目前只有 week2 的 briefing、week4／week5 的 title 有，但新增文章時要留意
+
 ## 部署
 
 **站台：https://vickychan096.github.io/veekend-claude/**（repo `VickyChan096/veekend-claude`）
@@ -140,7 +149,7 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 ## 現況
 
-Phase 1–6 完成：基礎建設、共用元件庫、首頁與 layout、文章頁、部署上線。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–7 完成：基礎建設、共用元件庫、首頁與 layout、文章頁、部署上線、搜尋結果與關於頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
@@ -148,12 +157,14 @@ Phase 1–6 完成：基礎建設、共用元件庫、首頁與 layout、文章�
 - `app/components/layouts/`——HeaderBar、FooterBar、ScrollToTopButton、SiteAside
 - `app/pages/index.vue`——輪播、文章列表（LOAD MORE）、景點地圖、側欄
 - `app/pages/article/[week].vue`——hero、結構化內文、燈箱、本週地圖、上下篇導覽
+- `app/pages/result.vue`——三種查詢模式（`?tags=` / `?all=` / `?search=`），client 端篩選
+- `app/pages/about.vue`——錯位色塊的關於頁
 - 資料層——`ArticleService`（讀 `app/assets/data/articles.json`）、`useArticles()`
 - 內文解析——`npm run data:parse` 由 `db.json` 產生 `articles.json`，改內容要重跑
 - 資產——`public/images/`（132 檔）
 
 尚未處理：
-- 搜尋結果與關於頁（Phase 6）、登入與編輯頁（Phase 7）——目前都是 `PagePlaceholder`
+- 登入與文章編輯頁——目前是 `PagePlaceholder`
 - GAS 端未建，`NUXT_PUBLIC_GAS_API_URL` 無值
 - `app.baseURL` 正式值待定（repo 名稱未決）
 - login 權限模型待決

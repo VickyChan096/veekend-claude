@@ -36,8 +36,10 @@ withDefaults(
       </div>
       <div class="base-card__content">
         <p v-if="meta" class="base-card__meta">{{ meta }}</p>
-        <h3 class="base-card__title">{{ title }}</h3>
-        <p v-if="briefing" class="base-card__briefing">{{ briefing }}</p>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <h3 class="base-card__title" v-html="title" />
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <p v-if="briefing" class="base-card__briefing" v-html="briefing" />
         <p v-if="note" class="base-card__note">{{ note }}</p>
       </div>
     </NuxtLink>

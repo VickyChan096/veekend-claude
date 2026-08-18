@@ -22,7 +22,8 @@ const assetUrl = useAssetUrl()
       <img :src="assetUrl('images/arrow.svg')" alt="" aria-hidden="true" >
       <div>
         <strong>Prev Post</strong>
-        <p>{{ prev?.title ?? '沒有上一篇囉(◞‸◟)' }}</p>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <p v-html="prev?.title ?? '沒有上一篇囉(◞‸◟)'" />
       </div>
     </component>
 
@@ -34,7 +35,8 @@ const assetUrl = useAssetUrl()
     >
       <div>
         <strong>Next Post</strong>
-        <p>{{ next?.title ?? '沒有下一篇囉(◞‸◟)' }}</p>
+        <!-- eslint-disable-next-line vue/no-v-html -->
+        <p v-html="next?.title ?? '沒有下一篇囉(◞‸◟)'" />
       </div>
       <img :src="assetUrl('images/arrow.svg')" alt="" aria-hidden="true" >
     </component>

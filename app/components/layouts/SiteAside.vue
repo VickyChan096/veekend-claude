@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useAsyncData } from 'nuxt/app'
 import { useArticles } from '@/composables/pages/useArticles'
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import { stripHtml } from '@/utils/common/text'
 
 // legacy 的 js/aside.js。首頁、文章頁、搜尋結果頁共用。
 const assetUrl = useAssetUrl()
@@ -67,8 +68,9 @@ const popularPosts = computed(() =>
       <ul>
         <li v-for="post in popularPosts" :key="post.week">
           <NuxtLink :to="`/article/${post.week}`">
-            <img :src="assetUrl(post.smallCoverUrl)" :alt="post.title" >
-            <p>{{ post.title }}</p>
+            <img :src="assetUrl(post.smallCoverUrl)" :alt="stripHtml(post.title)" >
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <p v-html="post.title" />
           </NuxtLink>
         </li>
       </ul>

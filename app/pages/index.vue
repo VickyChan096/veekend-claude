@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useHead } from 'nuxt/app'
 import HeroCarousel from '@/components/pages/index/HeroCarousel.vue'
-import ArticleList from '@/components/pages/index/ArticleList.vue'
+import ArticleList from '@/components/common/article/ArticleList.vue'
 import DestinationMap from '@/components/pages/index/DestinationMap.vue'
 import SiteAside from '@/components/layouts/SiteAside.vue'
 import { useArticles } from '@/composables/pages/useArticles'

@@ -37,4 +37,6 @@ export interface Article {
   hashTags: string[]
   /** 解析後的內文區塊，可能是空陣列（未完成的文章）。由 scripts/parse-articles.mjs 產生 */
   blocks: ArticleBlock[]
+  /** blocks 攤平成的純文字，只給搜尋比對用。同樣由腳本產生 */
+  searchText: string
 }

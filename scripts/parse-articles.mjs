@@ -199,6 +199,49 @@ const parseContent = (html) => {
   return blocks
 }
 
+/**
+ * 把區塊裡的文字攤平成一條純文字，給搜尋頁比對用。
+ *
+ * legacy 是直接對原始 HTML 字串做 indexOf，會誤中 class="articleStyle1"
+ * 這類標記文字；這裡只收真正的內容，且順手去掉行內標籤。
+ */
+const stripTags = (html) => (html ?? '').replace(/<[^>]*>/g, ' ')
+
+const toSearchText = (blocks) => {
+  const chunks = []
+
+  const pushImage = (image) => {
+    if (image?.alt) chunks.push(image.alt)
+    if (image?.caption) chunks.push(image.caption)
+  }
+
+  blocks.forEach((block) => {
+    if (block.type === 'catalog') {
+      block.items.forEach((item) => chunks.push(item.text))
+      return
+    }
+    if (block.type === 'gallery') {
+      block.items.forEach((item) => {
+        if (item.heading) chunks.push(item.heading)
+        if (item.html) chunks.push(stripTags(item.html))
+        pushImage(item.image)
+      })
+      return
+    }
+    block.parts.forEach((part) => {
+      if (part.kind === 'heading') chunks.push(part.text)
+      else if (part.kind === 'list') part.items.forEach((item) => chunks.push(stripTags(item)))
+      else if (part.kind === 'paragraph') chunks.push(stripTags(part.html))
+      else if (part.kind === 'imageText') {
+        chunks.push(stripTags(part.html))
+        pushImage(part.image)
+      } else if (part.kind === 'image') pushImage(part.image)
+    })
+  })
+
+  return chunks.join(' ').replace(/\s+/g, ' ').trim()
+}
+
 const db = JSON.parse(readFileSync(SOURCE, 'utf8'))
 
 const articles = db.articles.map((article) => {
@@ -206,7 +249,7 @@ const articles = db.articles.map((article) => {
   // content 已經解析成 blocks，不再帶著原始 HTML，避免同一份資料兩種來源
   const rest = { ...article }
   delete rest.content
-  return { ...rest, blocks }
+  return { ...rest, blocks, searchText: toSearchText(blocks) }
 })
 
 writeFileSync(TARGET, `${JSON.stringify({ articles }, null, 2)}\n`, 'utf8')
@@ -221,5 +264,6 @@ articles.forEach((article) => {
   const summary = Object.entries(counts)
     .map(([key, value]) => `${key}×${value}`)
     .join(' ')
-  console.log(`  week ${String(article.week).padStart(2, ' ')}：${summary || '(無內文)'}`)
+  const chars = article.searchText.length
+  console.log(`  week ${String(article.week).padStart(2, ' ')}：${summary || '(無內文)'}${chars ? ` ｜ 搜尋索引 ${chars} 字` : ''}`)
 })

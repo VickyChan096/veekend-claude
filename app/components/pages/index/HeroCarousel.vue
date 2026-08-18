@@ -29,7 +29,8 @@ const slide = ref(0)
             </div>
             <div class="hero__text">
               <p>{{ article.city }} {{ article.district }}</p>
-              <h2>{{ article.title }}</h2>
+              <!-- eslint-disable-next-line vue/no-v-html -->
+              <h2 v-html="article.title" />
             </div>
           </div>
         </NuxtLink>

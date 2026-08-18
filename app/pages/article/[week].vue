@@ -8,6 +8,7 @@ import ArticleNav from '@/components/pages/article/ArticleNav.vue'
 import SiteAside from '@/components/layouts/SiteAside.vue'
 import { articleService } from '@/services/pages/ArticleService'
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import { stripHtml } from '@/utils/common/text'
 
 // legacy 的 article.html?week=N，改成路徑參數 /article/N。
 // crawler 會從首頁與 header 選單的連結爬到每一週，各自產生一份靜態頁。
@@ -33,9 +34,9 @@ const hasContent = computed(() => article.value.blocks.length > 0)
 useHead(() => ({
   title: `Week ${article.value.week} - ${areaLabel.value} | Veekend`,
   meta: [
-    { name: 'description', content: article.value.briefing },
+    { name: 'description', content: stripHtml(article.value.briefing) },
     { property: 'og:title', content: `Week ${article.value.week} - ${areaLabel.value} | Veekend` },
-    { property: 'og:description', content: article.value.briefing },
+    { property: 'og:description', content: stripHtml(article.value.briefing) },
     { property: 'og:image', content: assetUrl(article.value.largeCoverUrl) },
   ],
 }))
@@ -48,11 +49,13 @@ useHead(() => ({
     <div class="article-page__content">
       <article class="article-page__main">
         <header class="article-page__top">
-          <h1>{{ article.title }}</h1>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <h1 v-html="article.title" />
           <p class="article-page__byline">
             written by {{ article.userName }} ｜ {{ article.writtenDate }}
           </p>
-          <p class="article-page__brief">{{ article.briefing }}</p>
+          <!-- eslint-disable-next-line vue/no-v-html -->
+          <p class="article-page__brief" v-html="article.briefing" />
         </header>
 
         <ArticleBody v-if="hasContent" :blocks="article.blocks" />

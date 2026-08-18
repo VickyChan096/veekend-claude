@@ -11,7 +11,8 @@
 | 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output  | $14.04 |
 | 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
 | 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
-| 6     | 2026-08-18 | 部署上線 GitHub Pages     |                            |        |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages     | 4.8k input, 288.3k output, | $53.97 |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁        |                            |        |
 
 ---
 
@@ -456,12 +457,12 @@ Actions 的 job log 需要 repo admin 權限才讀得到，一開始只能盲猜
 
 ### 線上驗證
 
-| 檢查 | 結果 |
-|---|---|
-| `/`、`/article/1`～`/article/12`、`/example`、`/about`、`/login`、`/result` | 全部 200 |
-| 首頁 | 標題、文章卡片、圖片路徑（`/veekend-claude/images/...`）正確 |
-| 文章頁 week1 | 五種版面、內文圖片、YouTube、目錄錨點都在 |
-| 靜態資源 | 圖片、logo、favicon、`_nuxt/*.js` 全部 200 |
+| 檢查                                                                        | 結果                                                         |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `/`、`/article/1`～`/article/12`、`/example`、`/about`、`/login`、`/result` | 全部 200                                                     |
+| 首頁                                                                        | 標題、文章卡片、圖片路徑（`/veekend-claude/images/...`）正確 |
+| 文章頁 week1                                                                | 五種版面、內文圖片、YouTube、目錄錨點都在                    |
+| 靜態資源                                                                    | 圖片、logo、favicon、`_nuxt/*.js` 全部 200                   |
 
 ### 待確認／未完成
 
@@ -469,6 +470,90 @@ Actions 的 job log 需要 repo admin 權限才讀得到，一開始只能盲猜
 - GAS 端未建，資料仍讀專案內的 `articles.json`
 - login 權限模型仍未拍板
 
+Total cost: $53.97
+Total duration (API): 1h 4m 9s
+Total duration (wall): 4h 9m 1s
+Total code changes: 2693 lines added, 70 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 4.8k input, 288.3k output, 75.4m cache read, 903.3k cache write ($53.97)
+
 ### 下一步（Phase 7）
 
 移植搜尋結果頁與關於頁：`legacy-app/result.html` + `js/result.js`、`about.html`。
+
+---
+
+## Phase 7 — 搜尋結果頁與關於頁（2026-08-18）
+
+### 做了什麼
+
+移植 `legacy-app/result.html` + `js/result.js` 與 `about.html`。順帶修掉一個 Phase 4 就存在、到這輪才發現的顯示 bug。
+
+### 定案的決定
+
+| 議題 | 決定 |
+|---|---|
+| 搜尋是否涵蓋內文 | parser 多輸出一欄純文字 `searchText` |
+| `/result` 無 query 時 | 顯示全部文章，當成「全部文章」頁 |
+
+### 搜尋
+
+legacy 的搜尋直接對原始 HTML 字串做 `indexOf`，但 Phase 5 已經把 `content` 解析成 blocks，原始 HTML 不存在了。改法是讓 `scripts/parse-articles.mjs` 額外輸出 `searchText`——把 blocks 的文字攤平成一條純文字。
+
+順帶修掉 legacy 的一個 bug：它會搜到 `class="articleStyle1"` 這類標記文字，新的索引只收真正的內容。
+
+三種模式沿用 legacy 的 query 形式：
+
+| query | 行為 |
+|---|---|
+| `?tags=咖啡廳` | 精確比對 hashTags |
+| `?all=台北市` | 依縣市；「其他」＝台北市與新北市以外 |
+| `?search=丸林` | 模糊比對縣市／區域／標題／摘要／**內文**／標籤 |
+
+純靜態站的 query 只有 client 端拿得到，所以結果區包在 `<ClientOnly>` 裡（搜尋結果本來也不需要 SEO）。
+
+驗證（對真實資料跑過）：`all=台北市` 4 篇、`all=新北市` 6 篇、`all=其他` 2 篇（基隆市＋屏東縣）、`tags=咖啡廳` 2 篇、`search=丸林` 1 篇（命中內文景點名）、`search=xyz` 0 篇。
+
+### 產出
+
+| 檔案 | 說明 |
+|---|---|
+| `composables/pages/useArticleSearch.ts` | 三種模式的篩選邏輯 |
+| `components/pages/result/ResultHeading.vue` | 關鍵字大標 + 命中篇數 |
+| `pages/result.vue` | 結果頁，client-only 渲染 |
+| `pages/about.vue` | 關於頁，照片後面的黑色方塊 + 黃色長條錯位 |
+| `utils/common/text.ts` | `stripHtml()` |
+
+`ArticleList` 從 `components/pages/index/` 搬到 `components/common/article/`（首頁與結果頁共用），加上 `pageSize`（0 = 全部顯示、不出 LOAD MORE）與 `emptyText` 兩個 prop。
+
+### 抓到一個 Phase 4 就存在的 bug
+
+用瀏覽器實際看 result 頁時發現，`db.json` 的 `title` 與 `briefing` 欄位裡夾雜行內 HTML，legacy 用 `innerHTML` 塞所以會渲染，我們用 `{{ }}` 插值就把標籤當**字面文字印出來**：
+
+- week2 摘要：`去<strong>大同區</strong>的大稻埕晃晃`
+- week4 標題：`其實想用泡泡攻擊路人<br>Bubbles are just for show!`
+- week5 標題：`穿草鞋，爬草山<br>青年。壯遊。臺灣`
+
+只有 3 筆、只用到 `<strong>` 與 `<br>`。修法是顯示處改 `v-html`（BaseCard、HeroCarousel、SiteAside、ArticleNav、文章頁標題與摘要），`<title>`、meta description、`alt` 則改用 `stripHtml()`。已寫成 CLAUDE.md 的一節。
+
+**這個 bug 靜態產物看不出來**——HTML 裡就是那串字，要在瀏覽器裡看渲染結果才會發現。
+
+### 驗證方式
+
+result 頁整頁都是 client 端渲染，靜態產物驗證不到，所以起了本地預覽伺服器用瀏覽器實際跑：
+
+- `?search=丸林` → 1 篇，title 動態變成「丸林 | Veekend」
+- `?all=其他` → 2 篇（基隆、屏東）
+- `/result` 無 query → 12 篇全出
+- `/article/4` → 標題正確斷行、內文完整、Next Post 的 week5 標題也正確斷行
+- console 無錯誤與 hydration 警告
+
+### 待確認／未完成
+
+- 登入頁與文章編輯頁仍是 `PagePlaceholder`（權限模型未拍板）
+- GAS 端未建，資料仍讀專案內的 `articles.json`
+
+### 下一步
+
+剩下 `login.html` 與 `articleEdit.html`。這兩頁卡在同一個未決事項：純靜態站做不了真正的身分驗證，legacy 的假登入（明文密碼放 db.json）不可照抄。要先決定權限模型才能動工。
