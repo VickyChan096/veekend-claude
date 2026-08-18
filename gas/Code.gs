@@ -508,3 +508,91 @@ function testRead() {
     )
   })
 }
+
+// ─────────────────────────────────────────────────────────────
+// 試算表改完自動重建網站
+//
+// 流程：編輯試算表 → onEditTrigger 記下時間 → 每分鐘跑一次的
+//       checkAndDeploy 發現有新編輯且已停手 60 秒 → 呼叫 GitHub API 重建
+//
+// 為什麼不在 onEdit 直接觸發：改一篇文章通常會動到十幾格，每格都觸發
+// 就會排隊建置十幾次。先記錄、停手後再送，一次就好。
+//
+// 需要的指令碼屬性（見 docs/gas-setup.md）：
+//   GITHUB_TOKEN  GitHub 的 fine-grained token（Contents 寫入權限）
+//   GITHUB_REPO   例如 VickyChan096/veekend-claude
+// ─────────────────────────────────────────────────────────────
+
+/** 停手多久之後才送出重建請求（毫秒） */
+var DEPLOY_QUIET_MS = 60 * 1000
+
+/** 安裝式觸發器：任何編輯都只記錄時間，不直接送出 */
+function onEditTrigger() {
+  PropertiesService.getScriptProperties().setProperty('LAST_EDIT_AT', String(Date.now()))
+}
+
+/** 每分鐘跑一次：有新編輯且已停手，就叫 GitHub 重建 */
+function checkAndDeploy() {
+  var props = PropertiesService.getScriptProperties()
+  var lastEdit = Number(props.getProperty('LAST_EDIT_AT') || 0)
+  var lastDeploy = Number(props.getProperty('LAST_DEPLOY_AT') || 0)
+
+  if (!lastEdit || lastEdit <= lastDeploy) return // 沒有新編輯
+  if (Date.now() - lastEdit < DEPLOY_QUIET_MS) return // 還在編輯中，再等等
+
+  triggerDeploy()
+  props.setProperty('LAST_DEPLOY_AT', String(Date.now()))
+}
+
+/** 呼叫 GitHub API 送出 repository_dispatch 事件 */
+function triggerDeploy() {
+  var props = PropertiesService.getScriptProperties()
+  var token = props.getProperty('GITHUB_TOKEN')
+  var repo = props.getProperty('GITHUB_REPO')
+
+  if (!token || !repo) {
+    Logger.log('尚未設定 GITHUB_TOKEN 或 GITHUB_REPO，略過')
+    return
+  }
+
+  var response = UrlFetchApp.fetch('https://api.github.com/repos/' + repo + '/dispatches', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      Authorization: 'Bearer ' + token,
+      Accept: 'application/vnd.github+json',
+    },
+    payload: JSON.stringify({ event_type: 'sheets-updated' }),
+    muteHttpExceptions: true,
+  })
+
+  var code = response.getResponseCode()
+  // GitHub 成功時回 204 No Content
+  if (code === 204) {
+    Logger.log('已送出重建請求')
+  } else {
+    Logger.log('重建請求失敗（HTTP ' + code + '）：' + response.getContentText())
+  }
+}
+
+/** 在編輯器手動跑一次，確認 token 與 repo 設定正確 */
+function testDeploy() {
+  triggerDeploy()
+}
+
+/**
+ * 一鍵安裝兩個觸發器。在編輯器裡手動執行一次即可，重複執行會先清掉舊的。
+ */
+function installTriggers() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet()
+
+  ScriptApp.getProjectTriggers().forEach(function (trigger) {
+    var name = trigger.getHandlerFunction()
+    if (name === 'onEditTrigger' || name === 'checkAndDeploy') ScriptApp.deleteTrigger(trigger)
+  })
+
+  ScriptApp.newTrigger('onEditTrigger').forSpreadsheet(sheet).onEdit().create()
+  ScriptApp.newTrigger('checkAndDeploy').timeBased().everyMinutes(1).create()
+
+  Logger.log('觸發器安裝完成：編輯試算表後約 1~2 分鐘會自動重建網站')
+}

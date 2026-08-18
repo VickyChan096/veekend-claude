@@ -234,11 +234,100 @@ workflow 已經設定好會讀這個 secret，不用改。
 
 ## 之後怎麼更新內容
 
-1. 直接在 Google 試算表改
-2. 到 repo 的 **Actions → Deploy to GitHub Pages → Run workflow** 手動觸發
-3. 約兩分鐘後網站更新
+直接在 Google 試算表改就好。存檔後約 1～2 分鐘，網站會自動重建上線——
+不用寫程式、不用 push、不用按任何按鈕。
 
-改內容不需要動程式碼，也不需要 push。
+自動重建要先做完下面「設定自動重建」那一節。還沒設定的話，改完要自己到
+repo 的 **Actions → Deploy to GitHub Pages → Run workflow** 手動觸發。
+
+### 為什麼不是即時的
+
+網站是靜態檔案，資料在**建置那一刻**就寫進 HTML 了，訪客載入時不會去打 Google。
+這樣換來的好處是：
+
+- 訪客 0.6 秒看到內容（直接打 GAS 要 4～15 秒）
+- Google 搜尋與 LINE／Facebook 分享預覽抓得到標題和封面圖
+- 再多人瀏覽也不會用掉 Google Sheets 的配額
+
+代價就是改完要等約 2 分鐘。
+
+---
+
+## 設定自動重建（改完試算表就自動上線）
+
+做完這節之後，你在試算表存檔約 1～2 分鐘，網站就會自己更新。
+
+原理：GAS 偵測到試算表被編輯 → 等你停手 60 秒 → 呼叫 GitHub API 叫醒建置流程。
+「等停手」是必要的，不然改一篇文章會動到十幾格，就會排隊建置十幾次。
+
+### 1. 建立 GitHub 存取權杖
+
+這把權杖讓 GAS 有權叫醒你的 repo，**權限給到剛好就好**。
+
+1. 開 https://github.com/settings/personal-access-tokens/new
+2. 填寫：
+
+| 欄位 | 填入 |
+| --- | --- |
+| **Token name** | `veekend-sheets-deploy` |
+| **Expiration** | 建議 1 年（到期要重設一次） |
+| **Repository access** | 選 **Only select repositories** → 勾 `veekend-claude` |
+
+3. 往下找 **Repository permissions**，只開這一項：
+
+| 權限 | 設定 |
+| --- | --- |
+| **Contents** | **Read and write** |
+
+   其餘全部保持 **No access**。
+
+4. 按 **Generate token**
+5. **立刻複製那串 `github_pat_...`**——關掉頁面就看不到了
+
+> ⚠ 這串等於你 repo 的鑰匙。只貼進下一步的 GAS 設定，不要貼給任何人、
+> 不要放進程式碼或截圖。真的外流的話，回到同一頁把它 **Revoke** 就失效了。
+
+### 2. 把權杖存進 GAS
+
+回到 Apps Script 編輯器：
+
+1. 左側齒輪 **專案設定** → 最下面 **指令碼屬性**
+2. 新增**兩個**屬性：
+
+| 屬性 | 值 |
+| --- | --- |
+| `GITHUB_TOKEN` | 剛才複製的 `github_pat_...` |
+| `GITHUB_REPO` | `VickyChan096/veekend-claude` |
+
+3. 儲存
+
+### 3. 先測試權杖有沒有效
+
+1. 回到編輯器，函式下拉選 **`testDeploy`** → 按 **執行**
+2. 第一次會要求新的授權（因為要連外網），照樣「進階」→「前往」→「允許」
+3. 執行記錄出現 **`已送出重建請求`** 就對了
+
+   出現 `重建請求失敗（HTTP 401）` → 權杖打錯或已失效
+   出現 `重建請求失敗（HTTP 404）` → `GITHUB_REPO` 打錯，或權限沒給 Contents 寫入
+
+4. 到 https://github.com/VickyChan096/veekend-claude/actions 看，
+   應該有一次新的執行，來源顯示為 `repository_dispatch`
+
+### 4. 安裝觸發器
+
+1. 函式下拉選 **`installTriggers`** → 按 **執行**
+2. 會再要求一次授權（要建立觸發器），允許
+3. 執行記錄出現 **`觸發器安裝完成`**
+
+裝好後可以在左側 **觸發條件**（時鐘圖示）看到兩個項目：
+`onEditTrigger`（試算表編輯時）與 `checkAndDeploy`（每分鐘）。
+
+### 5. 實測一次
+
+1. 在試算表隨便改一格（例如某篇文章的標題加兩個字）
+2. 等 1～2 分鐘
+3. 到 Actions 頁面看有沒有自動跑起來
+4. 跑完後重新整理網站，內容應該變了
 
 ---
 

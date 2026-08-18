@@ -4,16 +4,16 @@
 
 ## 總覽
 
-| Phase | 日期       | 內容                      | Tokens                     | 費用   |
-| ----- | ---------- | ------------------------- | -------------------------- | ------ |
-| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫 |                            |        |
-| 2     | 2026-08-18 | 基礎建設                  | 1.7k input, 50.0k output   | $4.59  |
-| 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output  | $14.04 |
-| 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
-| 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
-| 6     | 2026-08-18 | 部署上線 GitHub Pages     | 4.8k input, 288.3k output, | $53.97 |
-| 7     | 2026-08-18 | 搜尋結果頁與關於頁        | 5.0k input, 318.5k output  | $74.10 |
-| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 |                            |        |
+| Phase | 日期       | 內容                       | Tokens                     | 費用   |
+| ----- | ---------- | -------------------------- | -------------------------- | ------ |
+| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                            |        |
+| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output   | $4.59  |
+| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output  | $14.04 |
+| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output, | $23.13 |
+| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output  | $36.68 |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output, | $53.97 |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10 |
+| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39 |
 
 ---
 
@@ -577,21 +577,21 @@ claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($
 
 ### 定案的決定
 
-| 議題 | 決定 |
-|---|---|
-| 資料放哪 | 全部進 Sheets，可多開幾張表 |
-| 讀取時機 | build 時直接抓 GAS |
-| API 範圍 | 讀取加寫入 |
+| 議題               | 決定                              |
+| ------------------ | --------------------------------- |
+| 資料放哪           | 全部進 Sheets，可多開幾張表       |
+| 讀取時機           | build 時直接抓 GAS                |
+| API 範圍           | 讀取加寫入                        |
 | 未完成的 week 7–12 | 繼續顯示（`published` 填 `TRUE`） |
 
 ### Schema：四張表，`week` 當關聯鍵
 
-| 表 | 列數 | 內容 |
-|---|---|---|
-| `articles` | 12 | 一列一篇。`hashTags` 逗號分隔，新增 `published` 旗標 |
-| `destinations` | 29 | 一列一景點。`local[緯度,經度]` 拆成 `lat` / `lng` 兩欄 |
-| `blocks` | 56 | 一列一個內文區塊（`section` / `gallery`） |
-| `parts` | 199 | 一列一個區塊內元素（7 種 `kind`） |
+| 表             | 列數 | 內容                                                   |
+| -------------- | ---- | ------------------------------------------------------ |
+| `articles`     | 12   | 一列一篇。`hashTags` 逗號分隔，新增 `published` 旗標   |
+| `destinations` | 29   | 一列一景點。`local[緯度,經度]` 拆成 `lat` / `lng` 兩欄 |
+| `blocks`       | 56   | 一列一個內文區塊（`section` / `gallery`）              |
+| `parts`        | 199  | 一列一個區塊內元素（7 種 `kind`）                      |
 
 **刻意不存的兩樣東西**：文章目錄（可從「有 `anchorId` 的 section 的 h4 標題」推導）、搜尋索引（建置時由 `parts` 攤平）。少兩張表要維護。
 
@@ -608,14 +608,14 @@ claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($
 
 ### 產出
 
-| 檔案 | 說明 |
-|---|---|
-| `scripts/export-sheets.mjs` | `npm run sheets:export`，產生四份可直接匯入的 CSV（含 BOM，中文不亂碼） |
-| `scripts/build-from-rows.mjs` | 四張表 → `Article[]` 的組裝邏輯 |
-| `scripts/verify-sheets-schema.mjs` | `npm run sheets:verify`，證明 schema 無損 |
-| `gas/Code.gs` | `doGet` 讀取、`doPost` 寫入、金鑰存在指令碼屬性、`LockService` 防併發 |
-| `docs/gas-setup.md` | 十步驟設定教學，含欄位定義與疑難排解 |
-| `ArticleService` | 改為建置時打 GAS，沒設定就退回專案內的 `articles.json` |
+| 檔案                               | 說明                                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------- |
+| `scripts/export-sheets.mjs`        | `npm run sheets:export`，產生四份可直接匯入的 CSV（含 BOM，中文不亂碼） |
+| `scripts/build-from-rows.mjs`      | 四張表 → `Article[]` 的組裝邏輯                                         |
+| `scripts/verify-sheets-schema.mjs` | `npm run sheets:verify`，證明 schema 無損                               |
+| `gas/Code.gs`                      | `doGet` 讀取、`doPost` 寫入、金鑰存在指令碼屬性、`LockService` 防併發   |
+| `docs/gas-setup.md`                | 十步驟設定教學，含欄位定義與疑難排解                                    |
+| `ArticleService`                   | 改為建置時打 GAS，沒設定就退回專案內的 `articles.json`                  |
 
 ⚠ `gas/Code.gs` 的 `rebuildArticles()` 與 `scripts/build-from-rows.mjs` 是同一套邏輯的兩份實作（GAS 不支援 ES module import），兩邊都加了註記提醒同步修改。
 
@@ -637,17 +637,25 @@ claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($
 
 三種情境都實測：
 
-| 情境 | 結果 |
-|---|---|
-| GAS 正常 | 36 routes |
+| 情境         | 結果                                       |
+| ------------ | ------------------------------------------ |
+| GAS 正常     | 36 routes                                  |
 | GAS 網址無效 | 建置中斷，離開碼 1，訊息指出讀不到文章資料 |
-| 未設定 GAS | 退回本地備份，36 routes |
+| 未設定 GAS   | 退回本地備份，36 routes                    |
 
 ### 線上驗證
 
 - 12 個文章頁全部 200，首頁列表 12 筆齊全
 - week 12 正確顯示「趕稿中」
 - payload 含 `published` 欄位，證實資料走 GAS 而非本地備份
+
+Total cost: $99.39
+Total duration (API): 1h 31m 50s
+Total duration (wall): 6h 31m 3s
+Total code changes: 4542 lines added, 96 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 7.2k input, 392.9k output, 148.1m cache read, 1.5m cache writ
 
 ### 待確認／未完成
 

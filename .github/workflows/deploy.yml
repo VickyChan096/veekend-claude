@@ -6,6 +6,10 @@ on:
     branches: ['main']
   # 也可以到 Actions 分頁手動觸發
   workflow_dispatch:
+  # Google 試算表被編輯後，GAS 會打 GitHub API 送出這個事件來自動重建
+  # （設定見 docs/gas-setup.md 的「內容改完自動上線」）
+  repository_dispatch:
+    types: [sheets-updated]
 
 permissions:
   contents: read
