@@ -12,7 +12,7 @@
 | 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
 | 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
 | 6     | 2026-08-18 | 部署上線 GitHub Pages     | 4.8k input, 288.3k output, | $53.97 |
-| 7     | 2026-08-18 | 搜尋結果頁與關於頁        |                            |        |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁        | 5.0k input, 318.5k output  | $74.10 |
 
 ---
 
@@ -492,10 +492,10 @@ claude-opus-5: 4.8k input, 288.3k output, 75.4m cache read, 903.3k cache write (
 
 ### 定案的決定
 
-| 議題 | 決定 |
-|---|---|
-| 搜尋是否涵蓋內文 | parser 多輸出一欄純文字 `searchText` |
-| `/result` 無 query 時 | 顯示全部文章，當成「全部文章」頁 |
+| 議題                  | 決定                                 |
+| --------------------- | ------------------------------------ |
+| 搜尋是否涵蓋內文      | parser 多輸出一欄純文字 `searchText` |
+| `/result` 無 query 時 | 顯示全部文章，當成「全部文章」頁     |
 
 ### 搜尋
 
@@ -505,10 +505,10 @@ legacy 的搜尋直接對原始 HTML 字串做 `indexOf`，但 Phase 5 已經把
 
 三種模式沿用 legacy 的 query 形式：
 
-| query | 行為 |
-|---|---|
-| `?tags=咖啡廳` | 精確比對 hashTags |
-| `?all=台北市` | 依縣市；「其他」＝台北市與新北市以外 |
+| query          | 行為                                           |
+| -------------- | ---------------------------------------------- |
+| `?tags=咖啡廳` | 精確比對 hashTags                              |
+| `?all=台北市`  | 依縣市；「其他」＝台北市與新北市以外           |
 | `?search=丸林` | 模糊比對縣市／區域／標題／摘要／**內文**／標籤 |
 
 純靜態站的 query 只有 client 端拿得到，所以結果區包在 `<ClientOnly>` 裡（搜尋結果本來也不需要 SEO）。
@@ -517,13 +517,13 @@ legacy 的搜尋直接對原始 HTML 字串做 `indexOf`，但 Phase 5 已經把
 
 ### 產出
 
-| 檔案 | 說明 |
-|---|---|
-| `composables/pages/useArticleSearch.ts` | 三種模式的篩選邏輯 |
-| `components/pages/result/ResultHeading.vue` | 關鍵字大標 + 命中篇數 |
-| `pages/result.vue` | 結果頁，client-only 渲染 |
-| `pages/about.vue` | 關於頁，照片後面的黑色方塊 + 黃色長條錯位 |
-| `utils/common/text.ts` | `stripHtml()` |
+| 檔案                                        | 說明                                      |
+| ------------------------------------------- | ----------------------------------------- |
+| `composables/pages/useArticleSearch.ts`     | 三種模式的篩選邏輯                        |
+| `components/pages/result/ResultHeading.vue` | 關鍵字大標 + 命中篇數                     |
+| `pages/result.vue`                          | 結果頁，client-only 渲染                  |
+| `pages/about.vue`                           | 關於頁，照片後面的黑色方塊 + 黃色長條錯位 |
+| `utils/common/text.ts`                      | `stripHtml()`                             |
 
 `ArticleList` 從 `components/pages/index/` 搬到 `components/common/article/`（首頁與結果頁共用），加上 `pageSize`（0 = 全部顯示、不出 LOAD MORE）與 `emptyText` 兩個 prop。
 
@@ -553,6 +553,14 @@ result 頁整頁都是 client 端渲染，靜態產物驗證不到，所以起�
 
 - 登入頁與文章編輯頁仍是 `PagePlaceholder`（權限模型未拍板）
 - GAS 端未建，資料仍讀專案內的 `articles.json`
+
+Total cost: $74.10
+Total duration (API): 1h 12m 7s
+Total duration (wall): 4h 37m 18s
+Total code changes: 3045 lines added, 85 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($74.10)
 
 ### 下一步
 

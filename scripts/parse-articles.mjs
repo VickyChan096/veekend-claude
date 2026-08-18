@@ -150,14 +150,26 @@ const toGallery = (section) =>
     })
     .filter(Boolean)
 
-const toCatalog = (node) => ({
-  type: 'catalog',
-  label: clean(node.querySelector('p')?.textContent) || '本週景點',
-  items: node.querySelectorAll('.catalogDest a').map((link) => ({
-    anchor: (link.getAttribute('href') ?? '').replace(/^#/, ''),
-    text: clean(link.textContent),
-  })),
-})
+/**
+ * 目錄由「有 anchorId 的 section 的 h4 標題」推導，不解析原始 HTML 的目錄區塊。
+ *
+ * 理由：Sheets 那邊也是這樣推導（scripts/build-from-rows.mjs），兩條路徑只留一種
+ * 產生方式才不會分歧。legacy 只有 week1 的目錄與內文標題不一致（原始資料的錯字
+ * 「丸林魯肉飯」vs「丸林滷肉飯」），推導後統一成內文的寫法。
+ */
+const CATALOG_LABEL = '本週景點'
+
+const buildCatalog = (blocks) => {
+  const items = blocks
+    .filter((block) => block.type === 'section' && block.anchorId)
+    .map((block) => {
+      const heading = block.parts.find((part) => part.kind === 'heading' && part.level === 4)
+      return heading ? { anchor: block.anchorId, text: heading.text } : null
+    })
+    .filter(Boolean)
+
+  return items.length ? { type: 'catalog', label: CATALOG_LABEL, items } : null
+}
 
 const parseContent = (html) => {
   if (!html) return []
@@ -168,10 +180,8 @@ const parseContent = (html) => {
   root.childNodes.forEach((node) => {
     if (!node.tagName) return
 
-    if (node.classList?.contains('article__middle__catalog')) {
-      blocks.push(toCatalog(node))
-      return
-    }
+    // 原始 HTML 的目錄區塊直接略過，最後再從 section 推導
+    if (node.classList?.contains('article__middle__catalog')) return
 
     if (node.tagName !== 'SECTION') return
 
@@ -196,7 +206,8 @@ const parseContent = (html) => {
     blocks.push({ type: 'section', layout, anchorId, parts })
   })
 
-  return blocks
+  const catalog = buildCatalog(blocks)
+  return catalog ? [catalog, ...blocks] : blocks
 }
 
 /**
@@ -249,6 +260,8 @@ const articles = db.articles.map((article) => {
   // content 已經解析成 blocks，不再帶著原始 HTML，避免同一份資料兩種來源
   const rest = { ...article }
   delete rest.content
+  // id 永遠等於 week 且程式碼未使用，不再輸出
+  delete rest.id
   return { ...rest, blocks, searchText: toSearchText(blocks) }
 })
 

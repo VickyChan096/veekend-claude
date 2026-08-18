@@ -39,4 +39,6 @@ export interface Article {
   blocks: ArticleBlock[]
   /** blocks 攤平成的純文字，只給搜尋比對用。同樣由腳本產生 */
   searchText: string
+  /** Sheets 的 published 欄。GAS 預設只回傳已發佈的，所以前端拿到的都是 true */
+  published?: boolean
 }

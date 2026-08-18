@@ -12,6 +12,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "data:parse": "node scripts/parse-articles.mjs",
+    "sheets:export": "node scripts/export-sheets.mjs",
+    "sheets:verify": "node scripts/verify-sheets-schema.mjs",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {

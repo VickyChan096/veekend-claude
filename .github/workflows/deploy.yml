@@ -56,6 +56,8 @@ jobs:
           # 自動用 repo 名稱當子路徑，改名或搬 repo 都不用改設定。
           # 站台網址會是 https://<owner>.github.io/<repo>/
           NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
+          # 沒設定這個 secret 時會退回專案內的 articles.json（見 ArticleService）
+          NUXT_PUBLIC_GAS_API_URL: ${{ secrets.GAS_API_URL }}
         run: npm run generate
 
       - name: Setup Pages

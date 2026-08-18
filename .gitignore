@@ -22,3 +22,6 @@ logs
 .env
 .env.*
 !.env.example
+
+# Sheets 匯入用的中繼檔，由 npm run sheets:export 產生
+scripts/sheets-export
