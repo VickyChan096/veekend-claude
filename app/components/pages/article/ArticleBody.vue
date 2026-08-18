@@ -15,7 +15,7 @@ const props = defineProps<{
   blocks: ArticleBlock[]
 }>()
 
-const assetUrl = useAssetUrl()
+const { assetUrl } = useAssetUrl()
 const lightboxOpen = ref(false)
 const lightboxIndex = ref(0)
 

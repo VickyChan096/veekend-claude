@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 import type { GalleryItem } from '@/types/api/articleContent'
 
 // legacy 的 section.articleStyle5：三欄圖文
@@ -8,7 +8,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{ (e: 'open-image', fullSrc: string): void }>()
-const assetUrl = useAssetUrl()
+
 </script>
 
 <template>
@@ -20,7 +20,11 @@ const assetUrl = useAssetUrl()
         :aria-label="item.heading ? `放大檢視：${item.heading}` : '放大檢視圖片'"
         @click="emit('open-image', item.image.fullSrc)"
       >
-        <img :src="assetUrl(item.image.src)" :alt="item.image.alt ?? item.heading ?? ''" loading="lazy" >
+        <BaseImage
+          :src="item.image.src"
+          :alt="item.image.alt ?? item.heading ?? ''"
+          sizes="sm:100vw md:384px"
+        />
       </button>
       <h3 v-if="item.heading">{{ item.heading }}</h3>
       <!-- eslint-disable-next-line vue/no-v-html -->

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import BaseCarousel from '@/components/common/carousel/BaseCarousel.vue'
-import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 import type { Article } from '@/types/api/article'
 
 // legacy 首頁的 Swiper。原本是三張硬編碼的 slide，改成吃資料。
@@ -10,7 +10,6 @@ defineProps<{
   articles: Article[]
 }>()
 
-const assetUrl = useAssetUrl()
 const slide = ref(0)
 </script>
 
@@ -20,7 +19,12 @@ const slide = ref(0)
       <VCarouselItem v-for="(article, articleIndex) in articles" :key="article.week">
         <NuxtLink :to="`/article/${article.week}`" class="hero__slide">
           <div class="hero__photo">
-            <img :src="assetUrl(article.largeCoverUrl)" :alt="`${article.city}${article.district}`" >
+            <BaseImage
+              :src="article.largeCoverUrl"
+              :alt="`${article.city}${article.district}`"
+              sizes="sm:100vw md:1280px"
+              :lazy="articleIndex > 0"
+            />
           </div>
           <div class="hero__caption" :class="{ 'is-active': slide === articleIndex }">
             <div class="hero__week">

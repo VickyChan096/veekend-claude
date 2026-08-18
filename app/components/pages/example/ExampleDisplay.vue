@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import ExampleSection from '@/components/pages/example/ExampleSection.vue'
 import ExampleRow from '@/components/pages/example/ExampleRow.vue'
 import BaseCard from '@/components/common/card/BaseCard.vue'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 import BaseChip from '@/components/common/chip/BaseChip.vue'
 import BaseRating from '@/components/common/rating/BaseRating.vue'
 import BaseDivider from '@/components/common/divider/BaseDivider.vue'
@@ -33,6 +34,15 @@ const rating = ref(4.2)
           meta="台北市 中山區"
           note="造訪於 2019.10.20"
         />
+      </div>
+    </ExampleRow>
+
+    <ExampleRow label="BaseImage">
+      <div class="image-demo">
+        <BaseImage src="images/week1/cover.jpg" alt="封面" sizes="sm:100vw md:480px" rounded />
+        <p class="image-demo__note">
+          載入前會顯示灰色骨架。圖片由 ipx 在建置時依 sizes 產生 WebP 縮圖，原始檔不動。
+        </p>
       </div>
     </ExampleRow>
 
@@ -69,6 +79,16 @@ const rating = ref(4.2)
 </template>
 
 <style lang="scss" scoped>
+.image-demo {
+  width: 100%;
+  max-width: 480px;
+
+  &__note {
+    @include body2-regular;
+    margin-top: 8px;
+    color: var(--subtitle);
+  }
+}
 .card-demo {
   width: 100%;
   max-width: 560px;

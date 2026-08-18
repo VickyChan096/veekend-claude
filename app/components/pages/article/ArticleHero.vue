@@ -7,7 +7,7 @@ defineProps<{
   article: Article
 }>()
 
-const assetUrl = useAssetUrl()
+const { assetUrl } = useAssetUrl()
 </script>
 
 <template>

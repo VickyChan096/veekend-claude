@@ -1,5 +1,6 @@
 <script lang="ts" setup>
-import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import { computed } from 'vue'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 import type { ArticlePart, SectionLayout } from '@/types/api/articleContent'
 
 /**
@@ -9,14 +10,19 @@ import type { ArticlePart, SectionLayout } from '@/types/api/articleContent'
  * - imageFirst／textFirst：全寬圖 + 文字
  * - video：影片區塊
  */
-defineProps<{
+const props = defineProps<{
   layout: SectionLayout
   anchorId?: string
   parts: ArticlePart[]
 }>()
 
 const emit = defineEmits<{ (e: 'open-image', fullSrc: string): void }>()
-const assetUrl = useAssetUrl()
+
+// 圖文各半的版面只佔一半寬度，請 ipx 產小一點的圖就好
+const isHalfWidth = computed(() => props.layout === 'imageLeft' || props.layout === 'imageRight')
+const imageSizes = computed(() =>
+  isHalfWidth.value ? 'sm:100vw md:512px' : 'sm:100vw md:1024px'
+)
 </script>
 
 <template>
@@ -48,7 +54,12 @@ const assetUrl = useAssetUrl()
         :aria-label="part.image.alt ? `放大檢視：${part.image.alt}` : '放大檢視圖片'"
         @click="emit('open-image', part.image.fullSrc)"
       >
-        <img :src="assetUrl(part.image.src)" :alt="part.image.alt ?? ''" loading="lazy" >
+        <BaseImage
+          :src="part.image.src"
+          :alt="part.image.alt ?? ''"
+          :sizes="imageSizes"
+          :ratio="isHalfWidth ? '4/3' : '3/2'"
+        />
         <span class="article-section__zoom">點擊看大圖</span>
       </button>
 
@@ -60,7 +71,7 @@ const assetUrl = useAssetUrl()
           :aria-label="part.image.alt ? `放大檢視：${part.image.alt}` : '放大檢視圖片'"
           @click="emit('open-image', part.image.fullSrc)"
         >
-          <img :src="assetUrl(part.image.src)" :alt="part.image.alt ?? ''" loading="lazy" >
+          <BaseImage :src="part.image.src" :alt="part.image.alt ?? ''" :sizes="imageSizes" rounded />
         </button>
       </div>
 
@@ -268,7 +279,6 @@ const assetUrl = useAssetUrl()
 
   .article-section__image {
     width: 50%;
-    max-height: 300px;
 
     img {
       max-height: 300px;
@@ -277,7 +287,6 @@ const assetUrl = useAssetUrl()
 
     @include mobile {
       width: 100%;
-      max-height: none;
       margin-bottom: 10px;
 
       img {

@@ -4,9 +4,10 @@ import { useAsyncData } from 'nuxt/app'
 import { useArticles } from '@/composables/pages/useArticles'
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
 import { stripHtml } from '@/utils/common/text'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 
 // legacy 的 js/aside.js。首頁、文章頁、搜尋結果頁共用。
-const assetUrl = useAssetUrl()
+const { assetUrl } = useAssetUrl()
 const { articles, topHashTags } = await useArticles()
 
 const socials = [
@@ -42,7 +43,7 @@ const popularPosts = computed(() =>
   <aside class="aside">
     <div class="aside__photo">
       <span />
-      <img :src="assetUrl('images/profile.jpg')" alt="Vicky" >
+      <BaseImage src="images/profile.jpg" alt="Vicky" sizes="sm:320px" />
     </div>
 
     <div class="aside__info">
@@ -68,7 +69,7 @@ const popularPosts = computed(() =>
       <ul>
         <li v-for="post in popularPosts" :key="post.week">
           <NuxtLink :to="`/article/${post.week}`">
-            <img :src="assetUrl(post.smallCoverUrl)" :alt="stripHtml(post.title)" >
+            <BaseImage :src="post.smallCoverUrl" :alt="stripHtml(post.title)" sizes="sm:320px md:128px" />
             <!-- eslint-disable-next-line vue/no-v-html -->
             <p v-html="post.title" />
           </NuxtLink>
@@ -87,10 +88,10 @@ const popularPosts = computed(() =>
 
     <div class="aside__ad">
       <a href="https://www.pinterest.com/meichenchan/vickys/" target="_blank" class="is-desktop">
-        <img :src="assetUrl('images/ad_300x450.jpg')" alt="設計服務" >
+        <BaseImage src="images/ad_300x450.jpg" alt="設計服務" sizes="sm:320px" ratio="300/450" />
       </a>
       <a href="https://www.pinterest.com/meichenchan/vickys/" target="_blank" class="is-mobile">
-        <img :src="assetUrl('images/ad_768x250.jpg')" alt="設計服務" >
+        <BaseImage src="images/ad_768x250.jpg" alt="設計服務" sizes="sm:100vw md:768px" ratio="768/250" />
       </a>
     </div>
   </aside>
@@ -313,6 +314,8 @@ const popularPosts = computed(() =>
     }
 
     img {
+      // aspect-ratio 要有寬度才算得出高度，沒有這行骨架會是 0 高
+      width: 100%;
       border-radius: var(--border-radius-s);
     }
 

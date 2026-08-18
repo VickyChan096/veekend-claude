@@ -6,7 +6,9 @@ import ArticleList from '@/components/common/article/ArticleList.vue'
 import DestinationMap from '@/components/pages/index/DestinationMap.vue'
 import SiteAside from '@/components/layouts/SiteAside.vue'
 import { useArticles } from '@/composables/pages/useArticles'
+import { useAssetUrl } from '@/composables/common/useAssetUrl'
 
+const { absoluteUrl } = useAssetUrl()
 const { articles, allDestinations } = await useArticles()
 
 // legacy 首頁輪播固定放前三篇
@@ -18,6 +20,10 @@ useHead({
     { name: 'description', content: '與你分享我的每週小探險' },
     { property: 'og:title', content: '週遊記 | Veekend' },
     { property: 'og:description', content: '與你分享我的每週小探險' },
+    // 社群平台不吃相對路徑，一定要絕對網址才會有預覽圖
+    { property: 'og:image', content: absoluteUrl('images/1200x630.jpg') },
+    { property: 'og:url', content: absoluteUrl('') },
+    { property: 'og:type', content: 'website' },
   ],
 })
 </script>

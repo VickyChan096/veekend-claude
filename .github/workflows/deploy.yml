@@ -55,6 +55,13 @@ jobs:
       - name: Typecheck
         run: npm run check
 
+      # GitHub Pages 的網址是全小寫的擁有者名稱，這裡先轉一次再組出完整站台網址。
+      # og:image、og:url 需要絕對網址，社群平台不接受相對路徑。
+      - name: Compute site URL
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "NUXT_PUBLIC_SITE_URL=https://${owner}.github.io" >> "$GITHUB_ENV"
+
       - name: Generate static site
         env:
           # 自動用 repo 名稱當子路徑，改名或搬 repo 都不用改設定。
@@ -62,6 +69,7 @@ jobs:
           NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/
           # 沒設定這個 secret 時會退回專案內的 articles.json（見 ArticleService）
           NUXT_PUBLIC_GAS_API_URL: ${{ secrets.GAS_API_URL }}
+          NUXT_PUBLIC_SITE_URL: ${{ env.NUXT_PUBLIC_SITE_URL }}
         run: npm run generate
 
       - name: Setup Pages

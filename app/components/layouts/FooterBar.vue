@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
 
-const assetUrl = useAssetUrl()
+const { assetUrl } = useAssetUrl()
 
 const links = [
   { label: 'EMAIL', href: 'mailto:s6102161021@yahoo.com.tw', icon: 'images/info-mail-y.png' },

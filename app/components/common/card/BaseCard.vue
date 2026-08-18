@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import BaseImage from '@/components/common/image/BaseImage.vue'
 // 文章卡片。設計來自 legacy 的 .articleList：圖片預設灰階，hover 才放大並回復彩色。
 withDefaults(
   defineProps<{
@@ -32,7 +33,7 @@ withDefaults(
     <NuxtLink v-if="to" :to="to" class="base-card__link">
       <div v-if="imageUrl" class="base-card__photo">
         <span v-if="badge" class="base-card__badge">{{ badge }}</span>
-        <NuxtImg :src="imageUrl" :alt="imageAlt ?? title" loading="lazy" />
+        <BaseImage :src="imageUrl" :alt="imageAlt ?? title" sizes="sm:100vw md:480px" />
       </div>
       <div class="base-card__content">
         <p v-if="meta" class="base-card__meta">{{ meta }}</p>

@@ -1,10 +1,9 @@
 <script lang="ts" setup>
 import { useHead } from 'nuxt/app'
-import { useAssetUrl } from '@/composables/common/useAssetUrl'
+import BaseImage from '@/components/common/image/BaseImage.vue'
 
 // legacy 的 about.html。設計重點是照片後面的兩塊錯位色塊：
 // 黑色方塊往左下偏、黃色長條往右上撐出去。
-const assetUrl = useAssetUrl()
 
 useHead({
   title: '關於 | Veekend',
@@ -16,7 +15,7 @@ useHead({
   <div class="about">
     <div class="about__content">
       <div class="about__photo">
-        <img :src="assetUrl('images/profile.jpg')" alt="VC" >
+        <BaseImage src="images/profile.jpg" alt="VC" sizes="sm:320px" />
       </div>
       <div class="about__text">
         <h1>關於 VC</h1>

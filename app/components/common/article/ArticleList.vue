@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import BaseCard from '@/components/common/card/BaseCard.vue'
 import BaseButton from '@/components/common/button/BaseButton.vue'
-import { useAssetUrl } from '@/composables/common/useAssetUrl'
 import type { Article } from '@/types/api/article'
 
 // legacy 的 #articleList + .moreBtn。首頁一次載 5 筆，搜尋結果頁一次全出。
@@ -20,7 +19,6 @@ const props = withDefaults(
   }
 )
 
-const assetUrl = useAssetUrl()
 const shown = ref(props.pageSize)
 
 // 搜尋條件變了要把已展開的筆數收回去
@@ -51,7 +49,7 @@ const loadMore = () => {
       :to="`/article/${article.week}`"
       :title="article.title"
       :briefing="article.briefing"
-      :image-url="assetUrl(article.largeCoverUrl)"
+      :image-url="article.largeCoverUrl"
       :image-alt="`${article.city}${article.district}`"
       :badge="`WEEK ${article.week}`"
       :meta="`${article.city} ${article.district}`"

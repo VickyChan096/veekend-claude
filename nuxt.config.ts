@@ -31,12 +31,21 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     preset: 'github_pages',
+    prerender: {
+      // ipx 在建置時同時處理數百張圖，跟頁面 prerender 搶資源會讓隨機頁面
+      // 冒出 [unhandled] 500——三次建置會掛一次。限制並行數換取穩定性。
+      concurrency: 4,
+    },
   },
 
   runtimeConfig: {
     public: {
       // GAS web app endpoint（讀取文章資料）
       gasApiUrl: process.env.NUXT_PUBLIC_GAS_API_URL ?? '',
+      // 站台的完整網址（含 baseURL），例如 https://user.github.io/repo/
+      // 只有 og:image / og:url 這類需要絕對網址的地方會用到——社群平台不吃相對路徑。
+      // 正式值由 workflow 依 repo 自動組出，本機留空即可。
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL ?? '',
     },
   },
 
@@ -63,6 +72,13 @@ export default defineNuxtConfig({
     },
   },
 
+  // 不要把 CSS 內嵌進 HTML。Noto Sans TC 是中文字型，@font-face 宣告切成幾百個
+  // unicode-range 子集就有 425KB，內嵌會讓每個用到字型的元件各塞一份
+  // ——首頁曾經因此變成 4.2MB（gzip 後仍有 1.67MB），而且換頁不能快取。
+  features: {
+    inlineStyles: false,
+  },
+
   css: ['@/assets/scss/main.scss'],
 
   modules: ['@nuxt/eslint', '@nuxt/fonts', '@nuxt/icon', '@nuxt/image'],
@@ -86,8 +102,24 @@ export default defineNuxtConfig({
   },
 
   image: {
-    // 靜態站不做 runtime 影像處理
-    provider: 'none',
+    // nuxt generate 時 ipx 會自動切成靜態模式：建置階段就把縮圖與 WebP 產好，
+    // 放進 .output/public/_ipx/，執行期不需要任何伺服器。
+    // 原始圖檔不動，最佳化版本是額外產生的。
+    provider: 'ipx',
+    // 斷點刻意只留四個。每多一個斷點、每多一種 sizes 寫法，都會多出一整批變體要產生
+    // ——曾經因為斷點太多產出 527 個變體、57MB，比原圖還大，而且建置會隨機失敗。
+    screens: {
+      sm: 640,
+      md: 768,
+      lg: 1024,
+      xl: 1280,
+    },
+    // 只影響用 width/height 指定尺寸的情況；用 sizes 時 @nuxt/image 仍會自動補
+    // 2 倍的 srcset 給高解析螢幕（例如 1280px 會多產 2560w）。那是正確行為
+    // ——瀏覽器只挑一個下載，不影響使用者流量，只是多佔建置磁碟。
+    densities: [1],
+    format: ['webp'],
+    quality: 82,
   },
 
   vite: {

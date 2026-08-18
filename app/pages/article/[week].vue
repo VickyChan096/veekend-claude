@@ -13,7 +13,7 @@ import { stripHtml } from '@/utils/common/text'
 // legacy 的 article.html?week=N，改成路徑參數 /article/N。
 // crawler 會從首頁與 header 選單的連結爬到每一週，各自產生一份靜態頁。
 const route = useRoute()
-const assetUrl = useAssetUrl()
+const { absoluteUrl } = useAssetUrl()
 const week = computed(() => Number(route.params.week))
 
 const { data } = await useAsyncData(`article-${week.value}`, async () => {
@@ -37,7 +37,10 @@ useHead(() => ({
     { name: 'description', content: stripHtml(article.value.briefing) },
     { property: 'og:title', content: `Week ${article.value.week} - ${areaLabel.value} | Veekend` },
     { property: 'og:description', content: stripHtml(article.value.briefing) },
-    { property: 'og:image', content: assetUrl(article.value.largeCoverUrl) },
+    // 社群平台不吃相對路徑，一定要絕對網址才會有預覽圖
+    { property: 'og:image', content: absoluteUrl(article.value.largeCoverUrl) },
+    { property: 'og:url', content: absoluteUrl(`article/${article.value.week}/`) },
+    { property: 'og:type', content: 'article' },
   ],
 }))
 </script>

@@ -6,7 +6,7 @@ import { useAssetUrl } from '@/composables/common/useAssetUrl'
 import { useAlert } from '@/composables/common/useAlert'
 import type { Article } from '@/types/api/article'
 
-const assetUrl = useAssetUrl()
+const { assetUrl } = useAssetUrl()
 const router = useRouter()
 const route = useRoute()
 const { openAlert } = useAlert()
