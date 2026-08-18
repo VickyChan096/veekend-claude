@@ -11,6 +11,7 @@
 | 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output  | $14.04 |
 | 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
 | 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages     |                            |        |
 
 ---
 
@@ -402,5 +403,72 @@ legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 
   claude-opus-5: 3.7k input, 240.2k output, 52.9m cache read, 419.4k cache write ($36.68)
 
 ### 下一步（Phase 6）
+
+移植搜尋結果頁與關於頁：`legacy-app/result.html` + `js/result.js`、`about.html`。
+
+---
+
+## Phase 6 — 部署上線 GitHub Pages（2026-08-18）
+
+### 成果
+
+**站台已上線：https://vickychan096.github.io/veekend-claude/**
+
+repo：`VickyChan096/veekend-claude`（新開，Public）。push 到 `main` 就自動建置部署。
+
+### 事前發現
+
+`VickyChan096/veekend-nuxt` 這個 repo 早就存在——2026-05 的前一次嘗試（`@nuxt/content` + `content/blog/*.md`，頁面在 `app/pages/weekly/`），Pages 也是活的。這解釋了為什麼 Phase 1 的 `package.json` 裡有 `@nuxt/content`。決定不動它，另開 `veekend-claude`。2022 年的舊站 `veekend` repo 也保持原狀。
+
+### 部署設定
+
+`.github/workflows/deploy.yml`：
+
+- `NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/` ——**baseURL 自動從 repo 名稱組出**，改名或搬 repo 都不用改設定
+- 建置前跑 `npm run check`（typecheck），失敗就不部署
+- `configure-pages` 加 `enablement: true`，自動啟用 Pages，不用手動去 Settings 設定
+- actions 一律用 v5（v4 是為 Node 20 寫的，runner 會強制它跑在 Node 24 上）
+
+### 踩到的坑：lock 檔在 Windows 上產生會漏掉 Linux 專用套件
+
+CI 的 `npm ci` 連續三次在 **1 秒內**失敗，但本地 `npm ci` 一路正常。
+
+```
+npm error code EUSAGE
+npm error `npm ci` can only install packages when your package.json and
+npm error package-lock.json are in sync.
+npm error Missing: @emnapi/runtime@1.11.3 from lock file
+npm error Missing: @emnapi/core@1.11.3 from lock file
+npm error Missing: @parcel/watcher@2.6.0 from lock file
+```
+
+**原因**：lock 檔在 Windows 上經過多輪 `npm uninstall` / `npm install -D` 後進入部分狀態，漏掉只有 Linux 需要的套件（`@emnapi/*` 是 sharp 的 wasm fallback，`@parcel/watcher` 連基底套件都缺）。Windows 上用不到這些，所以本地 `npm ci` 一路綠燈，**只有 Linux runner 會炸**。
+
+**解法**：刪掉 `node_modules` 與 `package-lock.json` 重跑 `npm install`。三個套件都補回來，副作用只有 vuetify 3.13.1 → 3.13.2。
+
+**教訓**：本地 `npm ci` 通過**不代表** CI 會通過——lock 檔是跟著產生它的平台走的。動過相依之後，要嘛重建 lock，要嘛就別相信本地驗證。
+
+### 診斷方式（下次可以直接用）
+
+Actions 的 job log 需要 repo admin 權限才讀得到，一開始只能盲猜，連錯三輪。後來改成把 npm 的輸出用 `::error::` 寫成 **annotation**——annotation 走公開 API 就讀得到，一次就看到真正的錯誤訊息。這段診斷程式碼留在 workflow 裡，之後 CI 出問題可以直接看。
+
+第一次抓錯方向抓了輸出**尾段**，結果只拿到 npm 的使用說明；錯誤訊息在**開頭**。
+
+### 線上驗證
+
+| 檢查 | 結果 |
+|---|---|
+| `/`、`/article/1`～`/article/12`、`/example`、`/about`、`/login`、`/result` | 全部 200 |
+| 首頁 | 標題、文章卡片、圖片路徑（`/veekend-claude/images/...`）正確 |
+| 文章頁 week1 | 五種版面、內文圖片、YouTube、目錄錨點都在 |
+| 靜態資源 | 圖片、logo、favicon、`_nuxt/*.js` 全部 200 |
+
+### 待確認／未完成
+
+- 搜尋結果、關於、登入、編輯頁仍是 `PagePlaceholder`
+- GAS 端未建，資料仍讀專案內的 `articles.json`
+- login 權限模型仍未拍板
+
+### 下一步（Phase 7）
 
 移植搜尋結果頁與關於頁：`legacy-app/result.html` + `js/result.js`、`about.html`。

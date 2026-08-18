@@ -120,22 +120,27 @@ app/
 
 ## 部署
 
-**正式部署走 GitHub Actions**（`.github/workflows/deploy.yml`）：push 到 `main` 就自動建置並發布到 GitHub Pages。
+**站台：https://vickychan096.github.io/veekend-claude/**（repo `VickyChan096/veekend-claude`）
+
+push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 - workflow 用 `NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/` 自動組出子路徑，**改名或搬 repo 都不用改設定**
-- 建置前會跑 `npm run check`（typecheck），失敗就不部署
+- 建置前跑 `npm run check`（typecheck），失敗就不部署
+- actions 一律用 v5——v4 是為 Node 20 寫的，runner 會強制它跑在 Node 24 上
 - 本機重現正式建置：複製 `.env.example` 成 `.env.production` 填好 `NUXT_APP_BASE_URL`，跑 `npm run generate:gh`
 
 踩過的坑：
 
-- ⚠ **不要在 Git Bash 用行內環境變數**：`NUXT_APP_BASE_URL=/veekend/ npm run generate` 會被 MSYS 的 POSIX 路徑轉換改寫成 `C:/Program Files/Git/veekend/`，建置**回報成功**但每頁只產出 `"Redirecting..."`，路由數從 41 掉到 3。要嘛加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
+- ⚠ **動過相依之後要重建 `package-lock.json`**。在 Windows 上多輪 `npm uninstall` / `npm install` 會讓 lock 漏掉只有 Linux 需要的套件（`@emnapi/*`、`@parcel/watcher`），**本機 `npm ci` 一路綠燈但 CI 秒炸**（EUSAGE / Missing from lock file）。解法是刪掉 `node_modules` 與 `package-lock.json` 重跑 `npm install`
+- ⚠ **CI 的 job log 需要 repo admin 權限**才讀得到。workflow 裡的 `Install dependencies` 會把 npm 輸出用 `::error::` 寫成 annotation，那個走公開 API 就讀得到——CI 出問題先看 annotation，不要盲猜
+- ⚠ **不要在 Git Bash 用行內環境變數**：`NUXT_APP_BASE_URL=/x/ npm run generate` 會被 MSYS 的 POSIX 路徑轉換改寫成 `C:/Program Files/Git/x/`，建置**回報成功**但每頁只產出 `"Redirecting..."`。要嘛加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
 - ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `largeCoverUrl`）一律經過 `useAssetUrl()`
 - ⚠ **prerender 的 crawler 會跟著站內連結爬**。連到不存在的路由會讓建置失敗，所以還沒重構的頁面要先用 `PagePlaceholder` 佔住路由
-- ⚠ **圖示要進 client bundle**：`icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示（checkbox、radio、分頁…）掃不到，要在 `nuxt.config.ts` 的 `VUETIFY_ICONS` 點名
+- ⚠ **圖示要進 client bundle**：`icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示掃不到，要在 `nuxt.config.ts` 的 `VUETIFY_ICONS` 點名
 
 ## 現況
 
-Phase 1–5 完成：基礎建設、共用元件庫、首頁與 layout、文章頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–6 完成：基礎建設、共用元件庫、首頁與 layout、文章頁、部署上線。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
