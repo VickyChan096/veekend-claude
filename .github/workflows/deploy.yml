@@ -21,7 +21,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # ⚠ 必須用 v5：v4 是為 Node 20 寫的，runner 會強制它跑在 Node 24 上而出錯
+      # ⚠ 用 v5：v4 是為 Node 20 寫的，runner 會強制它跑在 Node 24 上
       - name: Checkout
         uses: actions/checkout@v5
 
@@ -34,8 +34,18 @@ jobs:
       - name: Show toolchain versions
         run: node --version && npm --version
 
+      # npm 的輸出同時寫成 annotation——annotation 不需要 repo admin 權限就讀得到，
+      # 免得每次除錯都得人工去 Actions 頁面複製訊息
       - name: Install dependencies
-        run: npm ci
+        run: |
+          set +e
+          npm ci > npm-ci.log 2>&1
+          code=$?
+          cat npm-ci.log
+          if [ $code -ne 0 ]; then
+            node -e "const fs=require('fs');const t=fs.readFileSync('npm-ci.log','utf8').split('\n').slice(-40).join('%0A');console.log('::error::npm ci failed (exit '+process.argv[1]+')%0A'+t)" "$code"
+          fi
+          exit $code
 
       - name: Typecheck
         run: npm run check
