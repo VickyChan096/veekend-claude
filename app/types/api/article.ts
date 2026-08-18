@@ -1,3 +1,5 @@
+import type { ArticleBlock } from '@/types/api/articleContent'
+
 /**
  * 文章資料模型。
  * 來源：legacy-app/dataBase/db.json 的 articles[]（12 筆，欄位已全數掃過確認一致）。
@@ -33,6 +35,6 @@ export interface Article {
   smallCoverUrl: string
   destinations: Destination[]
   hashTags: string[]
-  /** 內文 HTML，可能為空字串（未完成的文章） */
-  content: string
+  /** 解析後的內文區塊，可能是空陣列（未完成的文章）。由 scripts/parse-articles.mjs 產生 */
+  blocks: ArticleBlock[]
 }

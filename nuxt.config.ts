@@ -1,6 +1,19 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 import vuetify from 'vite-plugin-vuetify'
 
+// Vuetify 內建元件會用到的 mdi 圖示（取自 vuetify/iconsets/mdi 的 aliases）。
+// 清單來源：Object.values(aliases)，把 'mdi-x' 轉成 '@nuxt/icon' 要的 'mdi:x'
+const VUETIFY_ICONS = [
+  'mdi:alert-circle', 'mdi:arrow-down', 'mdi:arrow-left', 'mdi:arrow-right', 'mdi:arrow-up',
+  'mdi:cached', 'mdi:calendar', 'mdi:check', 'mdi:check-circle', 'mdi:checkbox-blank-outline',
+  'mdi:checkbox-marked', 'mdi:chevron-down', 'mdi:chevron-left', 'mdi:chevron-right',
+  'mdi:chevron-up', 'mdi:circle', 'mdi:close', 'mdi:close-circle', 'mdi:information',
+  'mdi:magnify', 'mdi:menu', 'mdi:menu-down', 'mdi:menu-right', 'mdi:minus', 'mdi:minus-box',
+  'mdi:page-first', 'mdi:page-last', 'mdi:pencil', 'mdi:plus', 'mdi:radiobox-blank',
+  'mdi:radiobox-marked', 'mdi:star', 'mdi:star-half-full', 'mdi:star-outline',
+  'mdi:unfold-more-horizontal',
+]
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -29,9 +42,7 @@ export default defineNuxtConfig({
 
   app: {
     // GitHub Pages 子路徑。本機開發不設即為 /，部署時設成 /<repo-name>/
-    // ⚠ 不要把這個環境變數命名為 NUXT_APP_BASE_URL——Nuxt 會把同名變數再套用一次，
-    //   導致每個頁面只 prerender 出 "Redirecting..."。所以用自訂名稱。
-    baseURL: process.env.VEEKEND_BASE_URL ?? '/',
+    baseURL: process.env.NUXT_APP_BASE_URL ?? '/',
     head: {
       htmlAttrs: {
         lang: 'zh-Hant-TW',
@@ -61,6 +72,9 @@ export default defineNuxtConfig({
     serverBundle: false,
     clientBundle: {
       scan: true,
+      // scan 只掃得到原始碼裡寫死的名稱。Vuetify 的 checkbox／radio／分頁等圖示
+      // 是執行期才從 alias 取的，掃不到，要在這裡點名（見 plugins/vuetify.ts）
+      icons: VUETIFY_ICONS,
     },
     fallbackToApi: false,
   },

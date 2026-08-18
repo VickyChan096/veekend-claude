@@ -42,6 +42,16 @@ const veekendDark = {
   },
 }
 
+/**
+ * Vuetify 內建 alias 給的是 `mdi-checkbox-marked` 這種連字號寫法，
+ * @nuxt/icon 要的是 `mdi:checkbox-marked`。沒轉換的話，因為我們關掉了
+ * fallbackToApi，checkbox 與 radio 的勾選圖示會整個載不出來。
+ */
+const toIconifyName = (icon: VuetifyIconProps['icon']): string => {
+  const name = icon ? String(icon) : ''
+  return name.startsWith('mdi-') ? name.replace(/^mdi-/, 'mdi:') : name
+}
+
 export default defineNuxtPlugin((nuxtApp) => {
   const vuetify = createVuetify({
     ssr: true,
@@ -56,7 +66,7 @@ export default defineNuxtPlugin((nuxtApp) => {
       sets: {
         custom: {
           component: (props: VuetifyIconProps) =>
-            h(resolveComponent('Icon'), { name: props.icon ? String(props.icon) : '' }),
+            h(resolveComponent('Icon'), { name: toIconifyName(props.icon) }),
         },
       },
     },

@@ -64,17 +64,17 @@ app/
 | legacy | 對應 |
 |---|---|
 | `index.html` + `js/index.js` | `pages/index.vue`（首頁輪播、文章列表、load more） |
-| `article.html` / `article6.html` + `js/article.js` | `pages/article/[id].vue`（`article6` 是完整內容範例，以它為準） |
+| `article.html` + `js/article.js` | `pages/article/[week].vue`（內文已解析成區塊，見「文章內文」段落） |
 | `articleEdit.html` | `pages/article/edit.vue` |
-| `about.html` / `login.html` / `result.html` | 同名 page |
+| `about.html` / `login.html` / `result.html` | 同名 page（尚未重構，目前是 `PagePlaceholder`） |
 | `js/layout.js` + `js/aside.js` | `layouts/default.vue` + `components/layouts/` |
 | `css/_variable.scss` `_mixin.scss` | 併入 `app/assets/scss/preprocess.scss` |
 | `css/_reset.scss` `_layout.scss` | `app/assets/scss/main.scss` |
 | `css/_aside.scss` `_articleList.scss` | 搬進對應元件的 `<style scoped lang="scss">` |
 | jQuery DOM 操作 | 宣告式綁定 |
-| Swiper | `v-carousel` |
+| Swiper | `BaseCarousel`（v-carousel） |
 | SweetAlert（`js/common.js` 的 `errAlert`） | `v-dialog` / `v-snackbar` |
-| Fancybox | `v-overlay` |
+| Fancybox | `BaseLightbox`（v-overlay） |
 | Leaflet | MapLibre GL，包在 `<ClientOnly>` |
 | axios + `$.ajax` | `$fetch` / `useAsyncData` |
 
@@ -95,6 +95,7 @@ app/
 1. **更新 `NOTE.md`**——在總覽表加一列，並補上該 phase 的詳細段落（做了什麼、關鍵決定、產出、待確認事項）。Token 與費用欄位**留空**。
 2. **提醒 Vicky 執行 `/cost`**，把數字填進 `NOTE.md`。AI 讀不到計費資料，**不要代填估算值**。
 3. **給一份可直接複製的 markdown 總結**，方便 Vicky 貼進自己的筆記本。
+
 ## 共用元件庫
 
 `app/components/common/` 底下依用途分資料夾，一個資料夾一類元件（`button/`、`input/`、`dialog/`…），命名一律 `Base*`。
@@ -108,28 +109,40 @@ app/
 
 深色模式：`useThemeMode()` 同時切 Vuetify 主題與 `<html data-theme>`，前者管 Vuetify 元件、後者管 `_theme.scss` 的 CSS 變數。改色票要**同時**改 `preprocess.scss` 的 `$theme-light` / `$theme-dark` 與 `plugins/vuetify.ts` 的兩組 theme。
 
+## 文章內文
+
+內文不是 HTML 字串——`db.json` 的 `content` 已由 `npm run data:parse`（`scripts/parse-articles.mjs`）解析成 `blocks[]`，成品在 `app/assets/data/articles.json`。
+
+- **改內文要重跑 `npm run data:parse`**，不要手改 `articles.json`
+- 區塊模型定義在 `app/types/api/articleContent.ts`；新增版型時同時改型別、腳本、`ArticleSection.vue`
+- 只有段落與清單項目保留行內 HTML（`<a>` `<u>` `<mark>` `<br>`），其餘一律走元件
+- 腳本遇到不認得的版型 class 會印警告並略過——跑完要看輸出有沒有警告
+
 ## 部署
 
 - 靜態輸出：`npm run generate` → `.output/public`
-- GitHub Pages 子路徑：`app.baseURL` 由 **`VEEKEND_BASE_URL`** 決定，正式建置走 `npm run generate:gh`（讀 `.env.production`）
-- ⚠ **這個環境變數不能叫 `NUXT_APP_BASE_URL`**——Nuxt 會把同名變數再套用一次，router base 與請求路徑對不起來，每頁只會 prerender 出 `"Redirecting..."`
-- ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `db.json` 的 `largeCoverUrl`）一律經過 `useAssetUrl()`
+- GitHub Pages 子路徑：`app.baseURL` 由 `NUXT_APP_BASE_URL` 決定，正式建置走 `npm run generate:gh`（讀 `.env.production`）
+- ⚠ **在 Git Bash 用行內環境變數會踩到 MSYS 的 POSIX 路徑轉換**：`NUXT_APP_BASE_URL=/veekend/` 會被改寫成 `C:/Program Files/Git/veekend/`，prerender 全數失敗且**不會報錯**——每頁只產出 `"Redirecting..."`，路由數從 41 掉到 3。要嘛前面加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
+- ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `largeCoverUrl`）一律經過 `useAssetUrl()`
 - ⚠ **prerender 的 crawler 會跟著站內連結爬**。連到不存在的路由會讓建置失敗，所以還沒重構的頁面要先用 `PagePlaceholder` 佔住路由
+- ⚠ **圖示要進 client bundle**：`icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示（checkbox、radio、分頁…）掃不到，要在 `nuxt.config.ts` 的 `VUETIFY_ICONS` 點名
 
 ## 現況
 
-Phase 1–4 完成：基礎建設、共用元件庫、首頁與 layout。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–5 完成：基礎建設、共用元件庫、首頁與 layout、文章頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
 - `app/components/common/`——30 個共用元件；`app/pages/example.vue` 為展示頁
 - `app/components/layouts/`——HeaderBar、FooterBar、ScrollToTopButton、SiteAside
 - `app/pages/index.vue`——輪播、文章列表（LOAD MORE）、景點地圖、側欄
-- 資料層——`ArticleService`（目前讀 `app/assets/data/db.json`）、`useArticles()`
+- `app/pages/article/[week].vue`——hero、結構化內文、燈箱、本週地圖、上下篇導覽
+- 資料層——`ArticleService`（讀 `app/assets/data/articles.json`）、`useArticles()`
+- 內文解析——`npm run data:parse` 由 `db.json` 產生 `articles.json`，改內容要重跑
 - 資產——`public/images/`（132 檔）
 
 尚未處理：
-- 文章頁（Phase 5）、搜尋結果與關於頁（Phase 6）、登入與編輯頁（Phase 7）——目前都是 `PagePlaceholder`
+- 搜尋結果與關於頁（Phase 6）、登入與編輯頁（Phase 7）——目前都是 `PagePlaceholder`
 - GAS 端未建，`NUXT_PUBLIC_GAS_API_URL` 無值
 - `app.baseURL` 正式值待定（repo 名稱未決）
 - login 權限模型待決

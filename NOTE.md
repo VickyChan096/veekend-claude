@@ -4,12 +4,13 @@
 
 ## 總覽
 
-| Phase | 日期       | 內容                      | Tokens                    | 費用   |
-| ----- | ---------- | ------------------------- | ------------------------- | ------ |
-| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫 |                           |        |
-| 2     | 2026-08-18 | 基礎建設                  | 1.7k input, 50.0k output  | $4.59  |
-| 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output | $14.04 |
-| 4     | 2026-08-18 | 首頁與 layout 移植        |                           |        |
+| Phase | 日期       | 內容                      | Tokens                     | 費用   |
+| ----- | ---------- | ------------------------- | -------------------------- | ------ |
+| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫 |                            |        |
+| 2     | 2026-08-18 | 基礎建設                  | 1.7k input, 50.0k output   | $4.59  |
+| 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output  | $14.04 |
+| 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
+| 5     | 2026-08-18 | 文章頁移植                |                           |        |
 
 ---
 
@@ -154,7 +155,7 @@ claude-opus-5: 1.7k input, 50.0k output, 4.2m cache read, 120.3k cache write ($4
 
 ### 先定的規則（已寫進 CLAUDE.md 開頭）
 
-- 本專案只有 Vicky 一人開發，文件與註解不出現其他人名或代稱（已把先前的 gaha 全數改掉）
+- 本專案只有 Vicky 一人開發，文件與註解不出現其他人名或代稱（先前誤用的代稱已全數改掉）
 - **動手前先問**——不確定的地方一次問完再實作
 - 參考來源分工：legacy-app 只給設計，002_View 決定結構與寫法
 
@@ -252,21 +253,21 @@ claude-opus-5: 2.3k input, 137.7k output, 16.4m cache read, 238.5k cache write (
 
 ### 產出
 
-| 檔案 | 對應 legacy | 說明 |
-|---|---|---|
-| `services/pages/ArticleService.ts` | `$.ajax` / `axios` 抓 db.json | 目前讀本地 JSON，換 GAS 只動這個檔 |
-| `composables/pages/useArticles.ts` | 各頁重複的資料處理 | 用 `useAsyncData` 包，prerender 時抓完寫進 payload；另提供依縣市分組、hashTag 排行、景點去重 |
-| `composables/common/useAssetUrl.ts` | — | 幫資料裡的圖片路徑補上 `app.baseURL` |
-| `layouts/default.vue` | `js/layout.js` | Header + main + Footer + ScrollToTop |
-| `components/layouts/HeaderBar.vue` | `createHeader()` | 黃底 fixed、logo、漢堡鍵、搜尋、三組縣市下拉選單 |
-| `components/layouts/FooterBar.vue` | `createFooter()` | 灰階大圖、社群連結（黃色底線 hover）、版權 |
-| `components/layouts/ScrollToTopButton.vue` | `#toTop` | 捲超過 200px 才淡入 |
-| `components/layouts/SiteAside.vue` | `js/aside.js` | 頭像、社群、隨機三篇熱門、hashTag 前 10、廣告 |
-| `components/pages/index/HeroCarousel.vue` | Swiper 區塊 | 改吃資料（原本三張硬編碼），parallax 用 CSS transition 近似 |
-| `components/pages/index/ArticleList.vue` | `createArticleList()` | 用 BaseCard，一次 5 筆、LOAD MORE 往後追加 |
-| `components/pages/index/DestinationMap.vue` | Leaflet 地圖 | MapLibre GL + OSM raster 圖磚，景點 marker 與 popup |
-| `components/pages/PagePlaceholder.vue` | — | 未重構頁面的佔位 |
-| `pages/{about,login,result}.vue`、`pages/article/[week].vue` | 同名 legacy 頁 | 佔位頁 |
+| 檔案                                                         | 對應 legacy                   | 說明                                                                                         |
+| ------------------------------------------------------------ | ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `services/pages/ArticleService.ts`                           | `$.ajax` / `axios` 抓 db.json | 目前讀本地 JSON，換 GAS 只動這個檔                                                           |
+| `composables/pages/useArticles.ts`                           | 各頁重複的資料處理            | 用 `useAsyncData` 包，prerender 時抓完寫進 payload；另提供依縣市分組、hashTag 排行、景點去重 |
+| `composables/common/useAssetUrl.ts`                          | —                             | 幫資料裡的圖片路徑補上 `app.baseURL`                                                         |
+| `layouts/default.vue`                                        | `js/layout.js`                | Header + main + Footer + ScrollToTop                                                         |
+| `components/layouts/HeaderBar.vue`                           | `createHeader()`              | 黃底 fixed、logo、漢堡鍵、搜尋、三組縣市下拉選單                                             |
+| `components/layouts/FooterBar.vue`                           | `createFooter()`              | 灰階大圖、社群連結（黃色底線 hover）、版權                                                   |
+| `components/layouts/ScrollToTopButton.vue`                   | `#toTop`                      | 捲超過 200px 才淡入                                                                          |
+| `components/layouts/SiteAside.vue`                           | `js/aside.js`                 | 頭像、社群、隨機三篇熱門、hashTag 前 10、廣告                                                |
+| `components/pages/index/HeroCarousel.vue`                    | Swiper 區塊                   | 改吃資料（原本三張硬編碼），parallax 用 CSS transition 近似                                  |
+| `components/pages/index/ArticleList.vue`                     | `createArticleList()`         | 用 BaseCard，一次 5 筆、LOAD MORE 往後追加                                                   |
+| `components/pages/index/DestinationMap.vue`                  | Leaflet 地圖                  | MapLibre GL + OSM raster 圖磚，景點 marker 與 popup                                          |
+| `components/pages/PagePlaceholder.vue`                       | —                             | 未重構頁面的佔位                                                                             |
+| `pages/{about,login,result}.vue`、`pages/article/[week].vue` | 同名 legacy 頁                | 佔位頁                                                                                       |
 
 ### 為什麼要先建佔位頁
 
@@ -274,11 +275,9 @@ claude-opus-5: 2.3k input, 137.7k output, 16.4m cache read, 238.5k cache write (
 
 ### 踩到的坑
 
-**`NUXT_APP_BASE_URL` 這個環境變數名稱不能用。** 原本 `nuxt.config.ts` 寫 `baseURL: process.env.NUXT_APP_BASE_URL ?? '/'`，設值後 Nuxt 會把同名環境變數**再套用一次**，router base 與請求路徑對不起來，每個頁面都只 prerender 出 `"Redirecting..."`，36 個路由掉到 3 個且全是空殼。
+**子路徑建置全數失敗，而且不會報錯。** 用 `NUXT_APP_BASE_URL=/veekend/ npm run generate` 建置後，每個頁面都只產出 `"Redirecting..."`，路由數從 36 掉到 3——但建置回報成功。
 
-診斷方式：把 baseURL 硬編碼成 `/veekend/` 重跑，41 個路由全部正常 → 確認是環境變數重複套用，不是 baseURL 機制本身的問題。
-
-解法：改名為 `VEEKEND_BASE_URL`，並新增 `generate:gh` script 走 `--dotenv .env.production`（比照 002_View 的做法）。
+> ⚠ 這一段當時的診斷是**錯的**，Phase 5 才查出真正原因，見下方 Phase 5 的更正。當時誤判為「Nuxt 把同名環境變數再套用一次」，於是把變數改名為 `VEEKEND_BASE_URL`，並新增 `generate:gh` script 走 `--dotenv .env.production`（比照 002_View）。改名本身沒有壞處，`generate:gh` 也留著，但**改名不是解法**，真正原因是 Git Bash 的路徑轉換。
 
 驗證過子路徑輸出全部正確：`/veekend/images/week1/cover.jpg`、`/veekend/article/1`、`/veekend/_nuxt/*.js`。
 
@@ -298,6 +297,100 @@ claude-opus-5: 2.3k input, 137.7k output, 16.4m cache read, 238.5k cache write (
 - 搜尋、關於、登入、文章頁都還是佔位頁
 - Phase 1 遺留的 login 權限模型仍未拍板
 
+  Total cost: $23.13
+  Total duration (API): 40m 25s
+  Total duration (wall): 2h 0m 19s Total code changes: 1271 lines added, 25 lines removed
+  Usage by model:
+  claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+  claude-opus-5: 3.0k input, 187.0k output, 30.4m cache read, 323.1k cache write ($23.13)
+
 ### 下一步（Phase 5）
 
 移植文章頁：`legacy-app/article6.html` + `js/article.js` → `pages/article/[week].vue`（內文、圖庫燈箱、景點地圖與評分）。
+
+---
+
+## Phase 5 — 文章頁移植（2026-08-18）
+
+### 做了什麼
+
+把 legacy 的 `article.html` + `js/article.js` 移植成 `pages/article/[week].vue`。內文原本是 db.json 裡一大塊 HTML，改成先解析成結構化區塊，再用 Vue 元件渲染。
+
+### 定案的決定
+
+| 議題 | 決定 |
+|---|---|
+| 內文渲染 | 解析成結構化資料，不用 v-html 整篇塞 |
+| 燈箱範圍 | 所有內文圖片都可點開（legacy 只有 7 張標了 `data-fancybox`） |
+
+### 內文解析
+
+legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 塞進頁面。裡面有 6 種版型（`articleStyle1~6`）、景點目錄、7 個 fancybox 連結、7 個 YouTube iframe，只有 week 1–6 有內容。
+
+**做法**：離線腳本 `scripts/parse-articles.mjs`（`npm run data:parse`）把 `db.json` 轉成 `articles.json`，內文變成 `blocks[]`。選離線而非 runtime 解析的理由：解析只需跑一次、產出可進版控並人工檢查、`node-html-parser` 不會進 client bundle。
+
+**區塊模型**（`app/types/api/articleContent.ts`）
+- `catalog`：本週景點目錄
+- `section`：`layout` 分 `imageLeft` / `imageRight` / `imageFirst` / `textFirst` / `video`，內含順序化的 `parts[]`（heading / list / paragraph / image / imageText / video）
+- `gallery`：三欄圖文（legacy 的 `articleStyle5`）
+
+只有段落與清單項目保留行內 HTML（`<a>` `<u>` `<mark>` `<br>`），用 `v-html` 渲染。
+
+**驗證**：逐篇比對原始 HTML 與解析結果的 `<img>`、`<iframe>`、`<li>` 數量，12 篇全部相符，零遺漏。
+
+### 產出
+
+| 檔案 | 說明 |
+|---|---|
+| `scripts/parse-articles.mjs` | HTML → 結構化區塊的轉換腳本 |
+| `app/types/api/articleContent.ts` | 區塊模型 |
+| `app/assets/data/articles.json` | 腳本產出，`ArticleService` 改讀這份 |
+| `components/pages/article/ArticleHero.vue` | 壓暗大圖 + 週次地區，含背景緩移動畫 |
+| `components/pages/article/ArticleBody.vue` | 區塊分派器，燈箱集中在這層，可左右切換全篇圖片 |
+| `components/pages/article/ArticleCatalog.vue` | 可摺疊的景點目錄 |
+| `components/pages/article/ArticleSection.vue` | 五種版面 + 六種 part 的渲染 |
+| `components/pages/article/ArticleGallery.vue` | 三欄圖文 |
+| `components/pages/article/ArticleMapAndTags.vue` | 本週景點地圖 + hashTags |
+| `components/pages/article/ArticleNav.vue` | 上一篇／下一篇，頭尾顯示「沒有上／下一篇囉」 |
+
+`DestinationMap` 加上 `areaLabel` / `height` / `zoom` / `focus` 四個 prop，首頁（全台 zoom 6.5）與文章頁（單週 zoom 14 定在第一個景點）共用。
+
+`ArticleService` 新增 `findNeighbours()`。無內文的 week 7–12 顯示「這篇還在趕稿中」。
+
+### 更正 Phase 4 的誤判
+
+**Phase 4 記錄的 baseURL 診斷是錯的。** 當時判定「Nuxt 把同名環境變數 `NUXT_APP_BASE_URL` 再套用一次」，把變數改名為 `VEEKEND_BASE_URL`。
+
+真正原因是 **Git Bash（MSYS）的 POSIX 路徑轉換**：在 shell 寫 `NUXT_APP_BASE_URL=/veekend/`，值會被改寫成 `C:/Program Files/Git/veekend/`。baseURL 變成 Windows 絕對路徑，router base 對不上請求路徑，於是每頁只產出 `"Redirecting..."`。當時「硬編碼就正常」之所以成立，只是因為硬編碼不經過 shell。
+
+驗證方式：`VEEKEND_BASE_URL=/veekend/ node -e "console.log(process.env.VEEKEND_BASE_URL)"` 直接印出 `C:/Program Files/Git/veekend/`。
+
+**已改回 `NUXT_APP_BASE_URL`**（Nuxt 標準名稱，實測沒有重複套用問題）。正確用法：加 `MSYS_NO_PATHCONV=1`，或走 `npm run generate:gh` 讀 `.env.production`（`--dotenv` 讀檔不經過 shell）。子路徑建置驗證 41 routes 全數正確。
+
+教訓：**跨平台的 shell 行為要先單獨驗證變數本身**，不要從「換個寫法就好了」直接推論原因。
+
+### 另外修掉的 bug
+
+**Vuetify 的 checkbox / radio 圖示載不出來。** 兩層原因：
+1. Vuetify 內建 alias 給的是 `mdi-checkbox-marked`（連字號），`@nuxt/icon` 要 `mdi:checkbox-marked`（冒號）。在 `plugins/vuetify.ts` 加了轉換。
+2. `icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示掃不到。在 `nuxt.config.ts` 加 `VUETIFY_ICONS` 清單點名 35 個。
+
+修掉後 client bundle 從 25 個圖示變成 47 個，警告消失。
+
+### 驗證結果
+
+- `npm run data:parse` ✅ 12 篇全數解析，圖片／影片／清單數量與原始 HTML 完全相符
+- `npm run generate` ✅ 36 routes（子路徑 41 routes），無 icon 警告
+- `npm run check` ✅ ／ `npm run lint` ✅
+- 文章頁 SSR 已渲染出目錄、錨點、五種版面、圖片、YouTube、上下篇導覽、hashTags
+- week 7–12 正確顯示空狀態
+
+### 待確認／未完成
+
+- 搜尋結果、關於、登入、編輯頁仍是 `PagePlaceholder`
+- GAS 端未建；`app.baseURL` 正式值待定（repo 名稱未決）
+- login 權限模型仍未拍板
+
+### 下一步（Phase 6）
+
+移植搜尋結果頁與關於頁：`legacy-app/result.html` + `js/result.js`、`about.html`。
