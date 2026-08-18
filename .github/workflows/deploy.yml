@@ -32,7 +32,8 @@ jobs:
           cache: 'npm'
 
       - name: Show toolchain versions
-        run: node --version && npm --version
+        run: |
+          node -e "console.log('::notice::node '+process.version+' / npm '+require('child_process').execSync('npm --version').toString().trim())"
 
       # npm 的輸出同時寫成 annotation——annotation 不需要 repo admin 權限就讀得到，
       # 免得每次除錯都得人工去 Actions 頁面複製訊息
@@ -43,7 +44,7 @@ jobs:
           code=$?
           cat npm-ci.log
           if [ $code -ne 0 ]; then
-            node -e "const fs=require('fs');const t=fs.readFileSync('npm-ci.log','utf8').split('\n').slice(-40).join('%0A');console.log('::error::npm ci failed (exit '+process.argv[1]+')%0A'+t)" "$code"
+            node -e "const fs=require('fs');const t=fs.readFileSync('npm-ci.log','utf8').split('\n').slice(0,30).join('%0A');console.log('::error::npm ci failed (exit '+process.argv[1]+')%0A'+t)" "$code"
           fi
           exit $code
 
