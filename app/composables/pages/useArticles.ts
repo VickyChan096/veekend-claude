@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useAsyncData } from 'nuxt/app'
+import { createError, useAsyncData } from 'nuxt/app'
 import { articleService } from '@/services/pages/ArticleService'
 import type { Article } from '@/types/api/article'
 
@@ -8,7 +8,21 @@ import type { Article } from '@/types/api/article'
  * client 端直接吃 payload，不會再打一次。
  */
 export const useArticles = async () => {
-  const { data } = await useAsyncData('articles', () => articleService.list())
+  const { data, error } = await useAsyncData('articles', () => articleService.list())
+
+  /**
+   * ⚠ useAsyncData 會把錯誤收進 error ref 而不是往外拋，所以 service 裡的 throw
+   *   到不了這裡。不主動檢查的話，GAS 掛掉時會靜悄悄產出一個沒有文章的網站
+   *   ——建置照樣回報成功，只是路由數從 36 掉到 12。
+   */
+  if (import.meta.server && (error.value || !data.value?.length)) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: `建置時讀不到文章資料：${error.value?.message ?? '回傳是空的'}`,
+      fatal: true,
+    })
+  }
+
   const articles = computed<Article[]>(() => data.value ?? [])
 
   /** header 選單用：依縣市分組，台北市與新北市各自一組，其餘歸「其他」 */

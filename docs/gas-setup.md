@@ -25,7 +25,7 @@
 | `largeCoverUrl` | 文字 | `images/week1/cover.jpg` | 相對於 `public/` |
 | `smallCoverUrl` | 文字 | `images/week1/cover-s.jpg` | 側欄小圖 |
 | `hashTags` | 文字 | `花博公園,中山區,台北市` | 逗號分隔 |
-| `published` | 文字 | `TRUE` / `FALSE` | `FALSE` 的文章不會出現在網站上 |
+| `published` | 文字 | `TRUE` / `FALSE` | `FALSE` 的文章不會出現在網站上。**未完成但要展示的文章仍填 `TRUE`**，這欄是給不想公開的草稿用的 |
 
 ### `destinations` — 一列一個景點
 
@@ -200,6 +200,9 @@ npm run sheets:verify
 ```
 
 `count` 是 12 就成功了。
+
+> 如果只回 6 筆，代表 `articles` 表的 `published` 欄有 FALSE。那一欄是給草稿用的，
+> 未完成但仍要展示的文章（week 7~12）要填 `TRUE`。
 
 ### 9. 接到專案
 

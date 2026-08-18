@@ -68,8 +68,10 @@ const articleRows = articles.map((article) => [
   article.largeCoverUrl,
   article.smallCoverUrl,
   article.hashTags.join(','),
-  // legacy 用「內文是空的」代表未完成，改成明確的旗標
-  article.blocks.length > 0 ? 'TRUE' : 'FALSE',
+  // 一律 TRUE。published 是給「寫到一半不想公開」的草稿用的，
+  // 不要拿「內文是空的」當判斷——legacy 的 week7~12 就是刻意展示的未完成頁，
+  // 標題「未完成」、摘要「努力趕稿中」都是設計的一部分。
+  'TRUE',
 ])
 
 // ── destinations ────────────────────────────────────────────
