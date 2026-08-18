@@ -53,11 +53,23 @@ app/
 
 ## 資料層
 
-- 來源：GAS web app endpoint，背後是 Google Sheets。URL 走 `runtimeConfig.public`，不寫死。
-- **讀取在 build 時靜態化**：列表與單篇文章用 `useAsyncData`，`nuxt generate` 時抓完寫進靜態頁，兼顧 SEO 與載入速度。內容更新＝重新部署。
-- **寫入走 client 端**：`articleEdit` 的送出直接 POST 到 GAS（純靜態站沒有自己的 server）。
-- `../legacy-app/dataBase/db.json` 是資料結構的權威樣本，建 `app/types/` 時以它為準（`articles[]`、`destinations[]`、`users[]`）。
-- ⚠ legacy 的 `login.html` 是把明文密碼放在 db.json 的假登入。純靜態站做不了真正的驗證——**不要照抄**，登入與編輯的權限模型要另外決定。
+正式資料在 **Google Sheets**，透過 GAS Web App 讀取。設定與欄位定義見 `docs/gas-setup.md`。
+
+- 四張表：`articles` / `destinations` / `blocks` / `parts`，`week` 當關聯鍵
+- **讀取在 build 時**：`useArticles()` 用 `useAsyncData` 包住，prerender 時抓完寫進靜態頁。改內容＝編試算表後重跑 workflow
+- **沒設定 `NUXT_PUBLIC_GAS_API_URL` 就退回** `app/assets/data/articles.json`，讓沒有 GAS 也能開發
+- ⚠ **`useAsyncData` 會把錯誤收進 `error` ref 而不是往外拋**。在 service 裡 `throw` 擋不住建置——GAS 掛掉時會靜悄悄產出一個少了大半頁面的網站還回報成功。要在 composable 主動檢查 `error.value`，並用 `createError({ fatal: true })` 中斷 prerender
+- ⚠ `gas/Code.gs` 的 `rebuildArticles()` 與 `scripts/build-from-rows.mjs` 是**同一套邏輯的兩份實作**（GAS 不支援 ES module import），改一邊要改另一邊
+- `published` 欄是給**不想公開的草稿**用的。未完成但仍要展示的文章（week 7~12 的「趕稿中」佔位頁）要填 `TRUE`
+- ⚠ legacy 的 `login.html` 是把明文密碼放在 db.json 的假登入。純靜態站做不了真正的驗證——**不要照抄**。`doPost` 已在 GAS 端就緒但尚未接前端，因為靜態站的 API 金鑰必然外洩，權限模型要另外決定
+
+相關指令：
+
+| 指令 | 用途 |
+|---|---|
+| `npm run sheets:export` | 由 `articles.json` 產生四份可匯入 Sheets 的 CSV |
+| `npm run sheets:verify` | 匯出→重建→逐欄比對，證明 schema 無損 |
+| `npm run data:parse` | 由 legacy 的 `db.json` 重新產生 `articles.json`（備份資料用） |
 
 ## legacy → Nuxt 對照
 
@@ -149,7 +161,7 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 ## 現況
 
-Phase 1–7 完成：基礎建設、共用元件庫、首頁與 layout、文章頁、部署上線、搜尋結果與關於頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–8 完成：基礎建設、共用元件庫、各頁面移植、部署上線、資料庫改用 Google Sheets。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
@@ -159,12 +171,11 @@ Phase 1–7 完成：基礎建設、共用元件庫、首頁與 layout、文章�
 - `app/pages/article/[week].vue`——hero、結構化內文、燈箱、本週地圖、上下篇導覽
 - `app/pages/result.vue`——三種查詢模式（`?tags=` / `?all=` / `?search=`），client 端篩選
 - `app/pages/about.vue`——錯位色塊的關於頁
-- 資料層——`ArticleService`（讀 `app/assets/data/articles.json`）、`useArticles()`
-- 內文解析——`npm run data:parse` 由 `db.json` 產生 `articles.json`，改內容要重跑
+- 資料層——`ArticleService` 建置時讀 GAS（Google Sheets），未設定則退回本地 JSON
+- 內文解析——`npm run data:parse`（備份資料用）；正式內容改在 Sheets 編輯
 - 資產——`public/images/`（132 檔）
 
 尚未處理：
 - 登入與文章編輯頁——目前是 `PagePlaceholder`
-- GAS 端未建，`NUXT_PUBLIC_GAS_API_URL` 無值
-- `app.baseURL` 正式值待定（repo 名稱未決）
+- `doPost` 寫入 API 已就緒但未接前端（靜態站金鑰必然外洩，待權限模型決定）
 - login 權限模型待決

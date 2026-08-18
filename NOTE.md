@@ -13,6 +13,7 @@
 | 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
 | 6     | 2026-08-18 | 部署上線 GitHub Pages     | 4.8k input, 288.3k output, | $53.97 |
 | 7     | 2026-08-18 | 搜尋結果頁與關於頁        | 5.0k input, 318.5k output  | $74.10 |
+| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 |                            |        |
 
 ---
 
@@ -565,3 +566,96 @@ claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($
 ### 下一步
 
 剩下 `login.html` 與 `articleEdit.html`。這兩頁卡在同一個未決事項：純靜態站做不了真正的身分驗證，legacy 的假登入（明文密碼放 db.json）不可照抄。要先決定權限模型才能動工。
+
+---
+
+## Phase 8 — Google Sheets + GAS 資料庫（2026-08-18）
+
+### 成果
+
+**網站的資料現在來自 Google 試算表。** 更新內容只要編試算表 → 到 Actions 手動觸發 workflow → 約兩分鐘後上線，不用碰程式碼、不用 push。
+
+### 定案的決定
+
+| 議題 | 決定 |
+|---|---|
+| 資料放哪 | 全部進 Sheets，可多開幾張表 |
+| 讀取時機 | build 時直接抓 GAS |
+| API 範圍 | 讀取加寫入 |
+| 未完成的 week 7–12 | 繼續顯示（`published` 填 `TRUE`） |
+
+### Schema：四張表，`week` 當關聯鍵
+
+| 表 | 列數 | 內容 |
+|---|---|---|
+| `articles` | 12 | 一列一篇。`hashTags` 逗號分隔，新增 `published` 旗標 |
+| `destinations` | 29 | 一列一景點。`local[緯度,經度]` 拆成 `lat` / `lng` 兩欄 |
+| `blocks` | 56 | 一列一個內文區塊（`section` / `gallery`） |
+| `parts` | 199 | 一列一個區塊內元素（7 種 `kind`） |
+
+**刻意不存的兩樣東西**：文章目錄（可從「有 `anchorId` 的 section 的 h4 標題」推導）、搜尋索引（建置時由 `parts` 攤平）。少兩張表要維護。
+
+### 怎麼確定搬過去不會掉資料
+
+寫了 `npm run sheets:verify`：`articles.json` → CSV → 從 CSV 完整重建 → **逐欄比對**。12 篇全過才算數。
+
+部署後又做了第二次驗證：拿 GAS 的實際回傳跟本地資料比對，6 篇（後來 12 篇）逐欄一致。兩次都證明整條管線無損。
+
+### 順帶修掉的資料問題
+
+- **拿掉 `id` 欄位**——它永遠等於 `week`，而且程式碼從未使用
+- **week 1 的目錄有錯字**——目錄寫「丸林**魯**肉飯」、內文寫「丸林**滷**肉飯」。改成推導後自動統一，`parse-articles.mjs` 也改用同一套推導邏輯，兩條路徑不再分歧
+
+### 產出
+
+| 檔案 | 說明 |
+|---|---|
+| `scripts/export-sheets.mjs` | `npm run sheets:export`，產生四份可直接匯入的 CSV（含 BOM，中文不亂碼） |
+| `scripts/build-from-rows.mjs` | 四張表 → `Article[]` 的組裝邏輯 |
+| `scripts/verify-sheets-schema.mjs` | `npm run sheets:verify`，證明 schema 無損 |
+| `gas/Code.gs` | `doGet` 讀取、`doPost` 寫入、金鑰存在指令碼屬性、`LockService` 防併發 |
+| `docs/gas-setup.md` | 十步驟設定教學，含欄位定義與疑難排解 |
+| `ArticleService` | 改為建置時打 GAS，沒設定就退回專案內的 `articles.json` |
+
+⚠ `gas/Code.gs` 的 `rebuildArticles()` 與 `scripts/build-from-rows.mjs` 是同一套邏輯的兩份實作（GAS 不支援 ES module import），兩邊都加了註記提醒同步修改。
+
+### 兩個我自己犯的錯
+
+**1. `published` 預設值設錯。** 匯出時用「內文是空的」判斷，把 week 7–12 標成 `FALSE`，網站會從 12 篇變 6 篇。但那 6 篇的「未完成 / 努力趕稿中」是 legacy 刻意展示的頁面，不是草稿。已改成一律匯出 `TRUE`，該欄留給真正不想公開的草稿。
+
+**2. 建置防護根本沒生效——這個比較嚴重。**
+
+原本在 `ArticleService` 裡對建置階段 `throw`，以為抓不到資料就會讓 `nuxt generate` 失敗。實測用無效網址建置，結果是：
+
+- 建置**回報成功**
+- 路由數從 36 悄悄掉到 12
+- 文章頁全部消失
+
+原因是 **`useAsyncData` 會把錯誤收進 `error` ref 而不是往外拋**，service 裡的 `throw` 到不了外面。如果沒測就上線，會部署出一個看起來正常、內容卻大半不見的網站。
+
+改成在 `useArticles()` 主動檢查 `error.value`，並在資料為空時一併擋下，以 `createError({ fatal: true })` 中斷 prerender。
+
+三種情境都實測：
+
+| 情境 | 結果 |
+|---|---|
+| GAS 正常 | 36 routes |
+| GAS 網址無效 | 建置中斷，離開碼 1，訊息指出讀不到文章資料 |
+| 未設定 GAS | 退回本地備份，36 routes |
+
+### 線上驗證
+
+- 12 個文章頁全部 200，首頁列表 12 筆齊全
+- week 12 正確顯示「趕稿中」
+- payload 含 `published` 欄位，證實資料走 GAS 而非本地備份
+
+### 待確認／未完成
+
+- **`doPost` 尚未接到前端**：純靜態站的 API 金鑰必然外洩（要能送請求就得存在瀏覽器裡）。目前的金鑰擋得住隨機掃描，擋不住開開發者工具的人。兩條替代做法寫在 `docs/gas-setup.md` 最後
+- 登入頁與文章編輯頁仍是 `PagePlaceholder`
+
+### 下一步
+
+剩下 `login.html` 與 `articleEdit.html`，兩者卡在同一個決定：純靜態站做不了真正的身分驗證。要先拍板權限模型才能動工。
+
+既然資料已經在 Sheets，「編輯直接在試算表做、網站不放編輯功能」也是完全合理的選項。
