@@ -56,7 +56,9 @@ app/
 正式資料在 **Google Sheets**，透過 GAS Web App 讀取。設定與欄位定義見 `docs/gas-setup.md`。
 
 - 四張表：`articles` / `destinations` / `blocks` / `parts`，`week` 當關聯鍵
-- **讀取在 build 時**：`useArticles()` 用 `useAsyncData` 包住，prerender 時抓完寫進靜態頁。改內容＝編試算表後重跑 workflow
+- **讀取在 build 時**：`useArticles()` 用 `useAsyncData` 包住，prerender 時抓完寫進靜態頁
+- **改內容會自動重建**：GAS 偵測到試算表被編輯 → 停手 60 秒 → 呼叫 GitHub API 觸發 `repository_dispatch`，約 3～4 分鐘後上線。不用手動按任何按鈕
+- ⚠ **不要改成訪客即時抓 GAS**：實測 GAS 回應 4～15 秒、靜態頁 0.66 秒，且即時渲染會失去 SEO 與分享預覽，新文章網址還會 404
 - **沒設定 `NUXT_PUBLIC_GAS_API_URL` 就退回** `app/assets/data/articles.json`，讓沒有 GAS 也能開發
 - ⚠ **`useAsyncData` 會把錯誤收進 `error` ref 而不是往外拋**。在 service 裡 `throw` 擋不住建置——GAS 掛掉時會靜悄悄產出一個少了大半頁面的網站還回報成功。要在 composable 主動檢查 `error.value`，並用 `createError({ fatal: true })` 中斷 prerender
 - ⚠ `gas/Code.gs` 的 `rebuildArticles()` 與 `scripts/build-from-rows.mjs` 是**同一套邏輯的兩份實作**（GAS 不支援 ES module import），改一邊要改另一邊

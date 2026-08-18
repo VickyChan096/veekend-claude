@@ -573,7 +573,7 @@ claude-opus-5: 5.0k input, 318.5k output, 103.3m cache read, 1.4m cache write ($
 
 ### 成果
 
-**網站的資料現在來自 Google 試算表。** 更新內容只要編試算表 → 到 Actions 手動觸發 workflow → 約兩分鐘後上線，不用碰程式碼、不用 push。
+**網站的資料現在來自 Google 試算表。** 更新內容只要編試算表，約 3～4 分鐘後自動上線——不用碰程式碼、不用 push、不用按任何按鈕。
 
 ### 定案的決定
 
@@ -657,6 +657,59 @@ Usage by model:
 claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
 claude-opus-5: 7.2k input, 392.9k output, 148.1m cache read, 1.5m cache writ
 
+
+### 追加：改試算表自動重建
+
+原本改完內容要手動到 Actions 按 Run workflow。Vicky 提出期望是「頁面資料完全由 API 渲染，不要每次都重新部署上版」，於是重新檢視這個決定。
+
+**先量測再決定**：
+
+| | 回應時間 |
+| --- | --- |
+| GAS API | 首次 15.5 秒、暖機後 4.9s / 4.2s |
+| 目前的靜態頁 | 0.66 秒 |
+
+GAS 是給腳本用的，不是給網站流量用的。改成訪客即時抓的話，每個人打開網站要等 4～15 秒，而且失去 SEO 與 LINE／FB 分享預覽，新文章的網址還會 404（靜態站沒有對應的 HTML 檔）。
+
+**這個落差有一部分是我的問題**：Phase 8 問「什麼時候去打 GAS」時只給了兩個選項，沒把「訪客即時抓」列進去——因為 Phase 1 就定了「build 時靜態化」，後面直接沿用而沒有重新拿出來問。
+
+**定案**：保持建置時抓，但改成自動觸發。
+
+### 做法
+
+workflow 加上 `repository_dispatch`（`types: [sheets-updated]`）。GAS 端新增：
+
+| 函式 | 作用 |
+| --- | --- |
+| `onEditTrigger` | 安裝式觸發器，任何編輯只記下時間戳 |
+| `checkAndDeploy` | 每分鐘檢查，有新編輯且停手滿 60 秒才送出 |
+| `triggerDeploy` | 呼叫 GitHub dispatches API |
+| `testDeploy` / `installTriggers` | 手動驗證與一鍵安裝觸發器 |
+
+不在 `onEdit` 直接送出，是因為改一篇文章通常會動十幾格，每格都觸發就會排隊建置十幾次。先記錄、停手後再送，一次就好。
+
+權杖用 fine-grained token，只給 `veekend-claude` 的 Contents 寫入，其餘 No access。存在 GAS 指令碼屬性，不進版控。
+
+### 實測結果
+
+| 時間（UTC） | 事件 |
+| --- | --- |
+| 08:56:49 | 在試算表改 week 9 標題，`onEditTrigger` 記下時間 |
+| 08:58:32 | 停手滿 60 秒，`checkAndDeploy` 送出建置請求 |
+| 08:58:34 | GitHub 收到 `repository_dispatch`，開始建置 |
+| 約 09:01 | 建置完成，新標題上線 |
+
+**從改完到上線約 3～4 分鐘**（`checkAndDeploy` 每分鐘才檢查一次，所以會多等最多 60 秒），全程不用按任何按鈕。
+
+### 除錯時我自己犯的錯
+
+Vicky 回報「改了資料但沒有觸發 actions」，我查 GitHub 發現確實沒有新紀錄，就開始懷疑觸發器故障。
+
+實際上機制**正常運作**——`LAST_DEPLOY_AT` 是 `08:58:32`，而我查 GitHub 的時間是 `08:58:29`，**早了 3 秒**。
+
+正確的做法應該是先看 `LAST_EDIT_AT` / `LAST_DEPLOY_AT` 這兩個時間戳（它們就是這個機制的狀態），而不是只看 GitHub 一眼就下結論。後來也是靠這兩個數值才釐清的。
+
+教訓：**非同步機制要看它自己的狀態，不要只看下游有沒有結果**——下游還沒動，可能只是還沒輪到。
 ### 待確認／未完成
 
 - **`doPost` 尚未接到前端**：純靜態站的 API 金鑰必然外洩（要能送請求就得存在瀏覽器裡）。目前的金鑰擋得住隨機掃描，擋不住開開發者工具的人。兩條替代做法寫在 `docs/gas-setup.md` 最後
@@ -667,3 +720,5 @@ claude-opus-5: 7.2k input, 392.9k output, 148.1m cache read, 1.5m cache writ
 剩下 `login.html` 與 `articleEdit.html`，兩者卡在同一個決定：純靜態站做不了真正的身分驗證。要先拍板權限模型才能動工。
 
 既然資料已經在 Sheets，「編輯直接在試算表做、網站不放編輯功能」也是完全合理的選項。
+
+> 提醒：驗證自動重建時在試算表留了測試標題（week 7「測試板橋區Title」、week 8「測試石碇區Title」、week 9「信義區測試Title」），要記得改回「未完成」。
