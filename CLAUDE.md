@@ -108,24 +108,28 @@ app/
 
 深色模式：`useThemeMode()` 同時切 Vuetify 主題與 `<html data-theme>`，前者管 Vuetify 元件、後者管 `_theme.scss` 的 CSS 變數。改色票要**同時**改 `preprocess.scss` 的 `$theme-light` / `$theme-dark` 與 `plugins/vuetify.ts` 的兩組 theme。
 
+## 部署
+
+- 靜態輸出：`npm run generate` → `.output/public`
+- GitHub Pages 子路徑：`app.baseURL` 由 **`VEEKEND_BASE_URL`** 決定，正式建置走 `npm run generate:gh`（讀 `.env.production`）
+- ⚠ **這個環境變數不能叫 `NUXT_APP_BASE_URL`**——Nuxt 會把同名變數再套用一次，router base 與請求路徑對不起來，每頁只會 prerender 出 `"Redirecting..."`
+- ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `db.json` 的 `largeCoverUrl`）一律經過 `useAssetUrl()`
+- ⚠ **prerender 的 crawler 會跟著站內連結爬**。連到不存在的路由會讓建置失敗，所以還沒重構的頁面要先用 `PagePlaceholder` 佔住路由
+
 ## 現況
 
-基礎建設與共用元件庫已完成（Phase 2、3）。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–4 完成：基礎建設、共用元件庫、首頁與 layout。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
-- `nuxt.config.ts`——SSG（`nitro.preset: 'github_pages'`）、`app.baseURL` 由 `NUXT_APP_BASE_URL` 控制、顯式 import 全關、Vuetify plugin、SCSS 全域注入
-- `app/assets/scss/`——`preprocess.scss`（色票 map、六階 typography mixin、斷點）、`_theme.scss`（CSS 變數輸出，含深色模式）、`main.scss`、`_reset.scss`
-- `app/plugins/`——`vuetify.ts`（veekend 淺色／深色主題）、`globalStores.ts`（alert / dialog / fetchLoading / theme）
-- `app/composables/common/`——`useAlert`、`useDialog`、`useFetchLoading`、`useThemeMode`
-- `app/components/common/`——30 個共用元件，涵蓋表單（含驗證）、按鈕、卡片、對話框、輪播、燈箱、地圖、表格等
-- `app/pages/example.vue`——元件庫展示頁，9 個展示區塊
-- `app/types/`——`Article` / `Destination`（依 `db.json`）、`OptionBase`、`Alert`、`Dialog`、`BreadcrumbsItem`
-- `app/services/ServiceBase.ts`——GAS 讀寫基底
+- 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
+- `app/components/common/`——30 個共用元件；`app/pages/example.vue` 為展示頁
+- `app/components/layouts/`——HeaderBar、FooterBar、ScrollToTopButton、SiteAside
+- `app/pages/index.vue`——輪播、文章列表（LOAD MORE）、景點地圖、側欄
+- 資料層——`ArticleService`（目前讀 `app/assets/data/db.json`）、`useArticles()`
+- 資產——`public/images/`（132 檔）
 
 尚未處理：
-- 各頁面的實際重構（Phase 4 起，從首頁開始）
-- `layouts/default.vue` 還是空殼，legacy 的 header / footer / aside 尚未移植
-- `NUXT_PUBLIC_GAS_API_URL` 尚未有值，GAS 端也還沒建
-- `app.baseURL` 的正式值待定（GitHub Pages repo 名稱尚未決定，目前預設 `/`）
-- `BaseMap` 的圖磚來源仍是 MapLibre demotiles，需換正式來源
-- legacy 的 `_layout.scss`（597 行）大部分尚未移植，隨頁面重構逐步搬移
+- 文章頁（Phase 5）、搜尋結果與關於頁（Phase 6）、登入與編輯頁（Phase 7）——目前都是 `PagePlaceholder`
+- GAS 端未建，`NUXT_PUBLIC_GAS_API_URL` 無值
+- `app.baseURL` 正式值待定（repo 名稱未決）
+- login 權限模型待決

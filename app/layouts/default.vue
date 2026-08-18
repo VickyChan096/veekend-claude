@@ -1,13 +1,24 @@
 <script lang="ts" setup>
-// 前台 layout。legacy 的 js/layout.js 與 js/aside.js 重構後對應到這裡與 components/layouts/。
+import HeaderBar from '@/components/layouts/HeaderBar.vue'
+import FooterBar from '@/components/layouts/FooterBar.vue'
+import ScrollToTopButton from '@/components/layouts/ScrollToTopButton.vue'
 </script>
 
 <template>
-  <VApp>
-    <VMain>
+  <div class="site">
+    <HeaderBar />
+    <main class="site__main">
       <slot />
-    </VMain>
-  </VApp>
+    </main>
+    <FooterBar />
+    <ScrollToTopButton />
+  </div>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.site__main {
+  // 補上 fixed header 的高度
+  padding-top: 56px;
+  background-color: var(--surface);
+}
+</style>

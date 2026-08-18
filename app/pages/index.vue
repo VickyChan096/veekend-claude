@@ -1,38 +1,90 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
 import { useHead } from 'nuxt/app'
-import BaseButton from '@/components/common/button/BaseButton.vue'
+import HeroCarousel from '@/components/pages/index/HeroCarousel.vue'
+import ArticleList from '@/components/pages/index/ArticleList.vue'
+import DestinationMap from '@/components/pages/index/DestinationMap.vue'
+import SiteAside from '@/components/layouts/SiteAside.vue'
+import { useArticles } from '@/composables/pages/useArticles'
 
-// TODO(Phase 4): 移植 legacy-app/index.html + js/index.js
-// 首頁輪播（Swiper → BaseCarousel）、文章列表（BaseCard）、load more
-useHead({ title: 'Veekend' })
+const { articles, allDestinations } = await useArticles()
+
+// legacy 首頁輪播固定放前三篇
+const heroArticles = computed(() => articles.value.slice(0, 3))
+
+useHead({
+  title: '週遊記 | Veekend',
+  meta: [
+    { name: 'description', content: '與你分享我的每週小探險' },
+    { property: 'og:title', content: '週遊記 | Veekend' },
+    { property: 'og:description', content: '與你分享我的每週小探險' },
+  ],
+})
 </script>
 
 <template>
   <div class="home">
-    <h1 class="home__title">Veekend</h1>
-    <p class="home__lead">共用元件已建立，首頁重構待 Phase 4。</p>
-    <BaseButton to="/example" text="查看元件庫" prepend-icon="mdi:view-grid-outline" />
+    <div class="home__hero">
+      <HeroCarousel :articles="heroArticles" />
+    </div>
+
+    <div class="home__content">
+      <div class="home__main">
+        <ArticleList :articles="articles" />
+
+        <ClientOnly>
+          <DestinationMap :destinations="allDestinations" />
+          <template #fallback>
+            <div class="home__map-fallback">地圖載入中…</div>
+          </template>
+        </ClientOnly>
+      </div>
+
+      <SiteAside />
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
 .home {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 80px 20px;
-  background-color: var(--surface);
-
-  &__title {
-    @include display;
-    font-size: 4rem;
-    color: var(--title);
+  &__hero,
+  &__content {
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
-  &__lead {
-    @include body1-regular;
-    margin: 8px 0 24px;
+  &__content {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 30px 30px;
+
+    @include mobile {
+      flex-wrap: wrap;
+      padding: 0 15px 30px;
+    }
+  }
+
+  &__main {
+    width: 78%;
+
+    @include pad {
+      width: 71%;
+    }
+
+    @include mobile {
+      width: 100%;
+    }
+  }
+
+  &__map-fallback {
+    @include body2-regular;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 450px;
     color: var(--subtitle);
+    background-color: var(--container);
+    border-radius: var(--border-radius-s);
   }
 }
 </style>

@@ -9,6 +9,7 @@
 | 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫 |                           |        |
 | 2     | 2026-08-18 | 基礎建設                  | 1.7k input, 50.0k output  | $4.59  |
 | 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output | $14.04 |
+| 4     | 2026-08-18 | 首頁與 layout 移植        |                           |        |
 
 ---
 
@@ -235,3 +236,68 @@ claude-opus-5: 2.3k input, 137.7k output, 16.4m cache read, 238.5k cache write (
 ### 下一步（Phase 4）
 
 移植首頁：`legacy-app/index.html` + `js/index.js` → `pages/index.vue`，同時把 `js/layout.js` / `js/aside.js` 移進 `layouts/default.vue` 與 `components/layouts/`。
+
+---
+
+## Phase 4 — 首頁與 layout 移植（2026-08-18）
+
+### 做了什麼
+
+把 legacy 的 `index.html` + `js/index.js` + `js/layout.js` + `js/aside.js` 移植成 Nuxt 頁面與元件，並把 30MB 的圖片資產與 `db.json` 搬進專案。資料先讀本地 JSON，之後換 GAS 只需改 `ArticleService`。
+
+### 資產搬移
+
+- `legacy-app/images/`（132 檔、30MB）→ `public/images/`
+- `legacy-app/dataBase/db.json` → `app/assets/data/db.json`
+
+### 產出
+
+| 檔案 | 對應 legacy | 說明 |
+|---|---|---|
+| `services/pages/ArticleService.ts` | `$.ajax` / `axios` 抓 db.json | 目前讀本地 JSON，換 GAS 只動這個檔 |
+| `composables/pages/useArticles.ts` | 各頁重複的資料處理 | 用 `useAsyncData` 包，prerender 時抓完寫進 payload；另提供依縣市分組、hashTag 排行、景點去重 |
+| `composables/common/useAssetUrl.ts` | — | 幫資料裡的圖片路徑補上 `app.baseURL` |
+| `layouts/default.vue` | `js/layout.js` | Header + main + Footer + ScrollToTop |
+| `components/layouts/HeaderBar.vue` | `createHeader()` | 黃底 fixed、logo、漢堡鍵、搜尋、三組縣市下拉選單 |
+| `components/layouts/FooterBar.vue` | `createFooter()` | 灰階大圖、社群連結（黃色底線 hover）、版權 |
+| `components/layouts/ScrollToTopButton.vue` | `#toTop` | 捲超過 200px 才淡入 |
+| `components/layouts/SiteAside.vue` | `js/aside.js` | 頭像、社群、隨機三篇熱門、hashTag 前 10、廣告 |
+| `components/pages/index/HeroCarousel.vue` | Swiper 區塊 | 改吃資料（原本三張硬編碼），parallax 用 CSS transition 近似 |
+| `components/pages/index/ArticleList.vue` | `createArticleList()` | 用 BaseCard，一次 5 筆、LOAD MORE 往後追加 |
+| `components/pages/index/DestinationMap.vue` | Leaflet 地圖 | MapLibre GL + OSM raster 圖磚，景點 marker 與 popup |
+| `components/pages/PagePlaceholder.vue` | — | 未重構頁面的佔位 |
+| `pages/{about,login,result}.vue`、`pages/article/[week].vue` | 同名 legacy 頁 | 佔位頁 |
+
+### 為什麼要先建佔位頁
+
+`nuxt generate` 的 crawler 會跟著站內連結爬，連到不存在的路由**會讓建置直接失敗**。header 選單與文章列表都連向 `/article/N`、`/result`、`/about`、`/login`，所以這四個路由必須先存在。副作用是 `/article/1`～`/article/12` 已經各自產生靜態頁，Phase 5 只要把內容填進去。
+
+### 踩到的坑
+
+**`NUXT_APP_BASE_URL` 這個環境變數名稱不能用。** 原本 `nuxt.config.ts` 寫 `baseURL: process.env.NUXT_APP_BASE_URL ?? '/'`，設值後 Nuxt 會把同名環境變數**再套用一次**，router base 與請求路徑對不起來，每個頁面都只 prerender 出 `"Redirecting..."`，36 個路由掉到 3 個且全是空殼。
+
+診斷方式：把 baseURL 硬編碼成 `/veekend/` 重跑，41 個路由全部正常 → 確認是環境變數重複套用，不是 baseURL 機制本身的問題。
+
+解法：改名為 `VEEKEND_BASE_URL`，並新增 `generate:gh` script 走 `--dotenv .env.production`（比照 002_View 的做法）。
+
+驗證過子路徑輸出全部正確：`/veekend/images/week1/cover.jpg`、`/veekend/article/1`、`/veekend/_nuxt/*.js`。
+
+**side note**：側欄的「隨機三篇熱門文章」包在 `useAsyncData` 裡。legacy 是每次載入現抽，直接搬會讓 SSR 與 hydration 抽到不同結果而畫面閃動；包起來後抽選只在 prerender 發生一次並寫進 payload，效果變成「每次重新部署換一批」。
+
+### 驗證結果
+
+- `npm run generate` ✅ prerender 36 routes（baseURL=`/`）／41 routes（baseURL=`/veekend/`）
+- `npm run check` ✅ ／ `npm run lint` ✅
+- 首頁 SSR 已渲染出輪播、文章列表、側欄
+- 子路徑下圖片、站內連結、JS 資源路徑全部正確
+
+### 待確認／未完成
+
+- `app.baseURL` 正式值待定——repo 名稱決定後建 `.env.production` 填 `VEEKEND_BASE_URL`
+- 資料仍讀本地 `db.json`，GAS 端未建
+- 搜尋、關於、登入、文章頁都還是佔位頁
+- Phase 1 遺留的 login 權限模型仍未拍板
+
+### 下一步（Phase 5）
+
+移植文章頁：`legacy-app/article6.html` + `js/article.js` → `pages/article/[week].vue`（內文、圖庫燈箱、景點地圖與評分）。

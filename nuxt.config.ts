@@ -14,8 +14,7 @@ export default defineNuxtConfig({
     global: false,
   },
 
-  // GitHub Pages 靜態輸出。baseURL 由 NUXT_APP_BASE_URL 決定，
-  // 本機開發留空即為 '/'，部署時設成 '/<repo-name>/'
+  // GitHub Pages 靜態輸出
   ssr: true,
   nitro: {
     preset: 'github_pages',
@@ -29,7 +28,10 @@ export default defineNuxtConfig({
   },
 
   app: {
-    baseURL: process.env.NUXT_APP_BASE_URL ?? '/',
+    // GitHub Pages 子路徑。本機開發不設即為 /，部署時設成 /<repo-name>/
+    // ⚠ 不要把這個環境變數命名為 NUXT_APP_BASE_URL——Nuxt 會把同名變數再套用一次，
+    //   導致每個頁面只 prerender 出 "Redirecting..."。所以用自訂名稱。
+    baseURL: process.env.VEEKEND_BASE_URL ?? '/',
     head: {
       htmlAttrs: {
         lang: 'zh-Hant-TW',
