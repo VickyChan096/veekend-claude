@@ -1,0 +1,37 @@
+@use 'sass:map';
+@use 'preprocess' as *;
+
+// CSS 變數輸出。只由 main.scss 載入一次——不要放進 preprocess.scss，
+// 那份會被 additionalData 注入每個 scss 進入點，導致重複輸出。
+@mixin export-theme-vars($theme-map) {
+  @each $key, $value in $theme-map {
+    --#{'' + $key}: #{$value};
+  }
+}
+
+:root {
+  @include export-theme-vars($theme-light);
+
+  --border-radius-s: #{$border-radius-s};
+  --border-radius-m: #{$border-radius-m};
+  --border-radius-l: #{$border-radius-l};
+  --border-radius-xl: #{$border-radius-xl};
+  --header-height: #{$header-height};
+  --z-map: #{$z-map};
+  --z-panel: #{$z-panel};
+  --z-tooltip: #{$z-tooltip};
+  --z-header: #{$z-header};
+  --z-to-top: #{$z-to-top};
+  --z-dialog: #{$z-dialog};
+  --z-alert: #{$z-alert};
+  --z-backdrop: #{$z-backdrop};
+  --z-fetch-loading: #{$z-fetch-loading};
+  --transition-fast: #{$transition-fast};
+  --transition-slow: #{$transition-slow};
+  --focus-visible: #{$focus-visible};
+}
+
+[data-theme='dark'] {
+  @include export-theme-vars($theme-dark);
+  --focus-visible: 3px solid #{map.get($theme-dark, secondary)};
+}

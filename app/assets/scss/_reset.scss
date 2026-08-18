@@ -1,0 +1,66 @@
+@use 'preprocess' as *;
+
+// 基礎 reset。legacy-app/css/_reset.scss 的完整內容待各頁面重構時逐步移植。
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-height);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  @include body1-regular;
+  position: relative;
+  color: var(--font);
+  // legacy 的黑框：body 是黑的，內容區才是白的
+  background-color: var(--frame);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+figure,
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+
+  &:focus-visible {
+    outline: var(--focus-visible);
+  }
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}

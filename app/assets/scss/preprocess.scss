@@ -1,0 +1,198 @@
+// ─────────────────────────────────────────────────────────────
+// 全域注入（見 nuxt.config.ts 的 vite.css.preprocessorOptions）
+//
+// ⚠ 這裡只放「不會產生 CSS」的東西：變數、function、mixin。
+//    additionalData 會把本檔注入每一個 scss 進入點（main.scss、每個 .vue 的
+//    <style lang="scss">），任何會輸出 CSS 的規則都會被重複產生 N 份。
+//    CSS 變數的 :root 輸出放在 _theme.scss，只由 main.scss 載入一次。
+//
+// 設計值來源：legacy-app/css/_variable.scss、_mixin.scss、_layout.scss
+// 架構來源：2025_NPS_NatureDB/002_View
+// ─────────────────────────────────────────────────────────────
+@use 'sass:map';
+
+// ═══ 主題色票 ═══════════════════════════════════════════════
+// veekend 的識別色是黃 #ffe60f + 黑，深色模式保留黃色不變。
+$theme-light: (
+  primary: #ffe60f,
+  primary-darken: #d4bf00,
+  primary-lighten: #fff9c4,
+  primary-container: #fffdf0,
+  secondary: #000000,
+  secondary-lighten: #535353,
+  title: #000000,
+  subtitle: #535353,
+  font: #000000,
+  placeholder: #8a8a8a,
+  white: #ffffff,
+  surface: #ffffff,
+  container: #f7f7f7,
+  divider: #eeeeee,
+  stroke: #d4d4d4,
+  disabled: #d8d8d8,
+  // legacy 的 body 黑框，內容區才是白的
+  frame: #000000,
+  red1: #e60012,
+  red1-container: #fff5f5,
+  green1: #1a8a4a,
+  green1-container: #f4fdf8,
+  blue1: #0168ee,
+  blue1-container: #f3f8ff,
+);
+$theme-dark: (
+  primary: #ffe60f,
+  primary-darken: #ccb800,
+  primary-lighten: #4a4200,
+  primary-container: #2a2600,
+  secondary: #ffffff,
+  secondary-lighten: #b0b0b0,
+  title: #ffffff,
+  subtitle: #b0b0b0,
+  font: #f2f2f2,
+  placeholder: #757575,
+  white: #1a1a1a,
+  surface: #1a1a1a,
+  container: #232323,
+  divider: #3a3a3a,
+  stroke: #4a4a4a,
+  disabled: #3f3f3f,
+  frame: #000000,
+  red1: #ff5a63,
+  red1-container: #2a1416,
+  green1: #54c594,
+  green1-container: #12241c,
+  blue1: #5aa9ff,
+  blue1-container: #121d2a,
+);
+
+// ═══ 色彩變數（給需要 SCSS 函式運算的場合，例如 color.adjust）═══
+$primary: map.get($theme-light, primary);
+$secondary: map.get($theme-light, secondary);
+$subtitle: map.get($theme-light, subtitle);
+$divider: map.get($theme-light, divider);
+$font: map.get($theme-light, font);
+
+// ═══ 非色彩變數 ═════════════════════════════════════════════
+// 圓角：legacy 用 4px / 8px，整體是高對比的雜誌感，不做大圓角
+$border-radius-s: 4px;
+$border-radius-m: 8px;
+$border-radius-l: 20px;
+$border-radius-xl: 999px;
+
+$header-height: 76px; // legacy html 的 scroll-padding-top
+
+$z-map: 1;
+$z-panel: 2;
+$z-tooltip: 100;
+$z-header: 1005;
+$z-to-top: 1005;
+$z-dialog: 1010;
+$z-alert: 3000;
+$z-backdrop: 9998;
+$z-fetch-loading: 9999;
+
+$transition-fast: all 0.2s ease-in-out; // legacy $trsFast
+$transition-slow: all 0.5s ease-in-out; // legacy $trsSlow
+$focus-visible: 3px solid #{map.get($theme-light, secondary)};
+
+// ═══ 字型 ═══════════════════════════════════════════════════
+// legacy 用 Archivo Black 排英文標題、Noto Sans TC 排內文
+$font-family-sans: 'Noto Sans TC', sans-serif;
+$font-family-display: 'Archivo Black', 'Noto Sans TC', sans-serif;
+
+$font-head1: 2rem; // 32px（legacy 的 $fz-s * 2）
+$font-head2: 1.5rem; // 24px（legacy 的 $fz-l）
+$font-subtitle1: 1.25rem; // 20px（legacy 的 $fz-m）
+$font-subtitle2: 1.125rem; // 18px
+$font-body1: 1rem; // 16px（legacy 的 $fz-s）
+$font-body2: 0.875rem; // 14px
+
+$font-weight-bold: 700; // legacy $fw-xl
+$font-weight-medium: 500; // legacy $fw-l
+$font-weight-regular: 400; // legacy $fw-m
+$font-weight-thin: 300; // legacy $fw-s
+
+$line-height: 1.5;
+
+@function calc-letter-spacing($font-size, $multiplier: 0.02) {
+  @return $font-size * $multiplier;
+}
+
+@mixin typography($size, $weight) {
+  font-family: $font-family-sans;
+  font-size: $size;
+  font-weight: $weight;
+  line-height: $line-height;
+  letter-spacing: calc-letter-spacing($size);
+  @content;
+}
+
+// 六階字級 × 三種字重。002_View 是逐個展開寫，這裡收斂成共用的 typography()，
+// 對外的 mixin 名稱與用法完全相同。
+@mixin head1-bold { @include typography($font-head1, $font-weight-bold) { @content; } }
+@mixin head1-medium { @include typography($font-head1, $font-weight-medium) { @content; } }
+@mixin head1-regular { @include typography($font-head1, $font-weight-regular) { @content; } }
+@mixin head2-bold { @include typography($font-head2, $font-weight-bold) { @content; } }
+@mixin head2-medium { @include typography($font-head2, $font-weight-medium) { @content; } }
+@mixin head2-regular { @include typography($font-head2, $font-weight-regular) { @content; } }
+@mixin subtitle1-bold { @include typography($font-subtitle1, $font-weight-bold) { @content; } }
+@mixin subtitle1-medium { @include typography($font-subtitle1, $font-weight-medium) { @content; } }
+@mixin subtitle1-regular { @include typography($font-subtitle1, $font-weight-regular) { @content; } }
+@mixin subtitle2-bold { @include typography($font-subtitle2, $font-weight-bold) { @content; } }
+@mixin subtitle2-medium { @include typography($font-subtitle2, $font-weight-medium) { @content; } }
+@mixin subtitle2-regular { @include typography($font-subtitle2, $font-weight-regular) { @content; } }
+@mixin body1-bold { @include typography($font-body1, $font-weight-bold) { @content; } }
+@mixin body1-medium { @include typography($font-body1, $font-weight-medium) { @content; } }
+@mixin body1-regular { @include typography($font-body1, $font-weight-regular) { @content; } }
+@mixin body2-bold { @include typography($font-body2, $font-weight-bold) { @content; } }
+@mixin body2-medium { @include typography($font-body2, $font-weight-medium) { @content; } }
+@mixin body2-regular { @include typography($font-body2, $font-weight-regular) { @content; } }
+
+// 英文大標（legacy 的 Archivo Black）
+@mixin display {
+  font-family: $font-family-display;
+  font-weight: 400;
+  line-height: 1.1;
+  @content;
+}
+
+// ═══ 斷點 ═══════════════════════════════════════════════════
+// 桌機優先（max-width）——移植 legacy 版面時用這組，斷點值與 legacy 完全相同
+@mixin pad {
+  @media only screen and (max-width: 992px) {
+    @content;
+  }
+}
+@mixin mobile {
+  @media only screen and (max-width: 768px) {
+    @content;
+  }
+}
+@mixin min-mobile {
+  @media only screen and (max-width: 428px) {
+    @content;
+  }
+}
+
+// 行動優先（min-width）——新寫的元件用這組，對齊 002_View
+@mixin tablet {
+  @media only screen and (min-width: 768px) {
+    @content;
+  }
+}
+@mixin laptop {
+  @media only screen and (min-width: 1280px) {
+    @content;
+  }
+}
+@mixin desktop {
+  @media only screen and (min-width: 1440px) {
+    @content;
+  }
+}
+
+@mixin hover {
+  @media (hover: hover) {
+    @content;
+  }
+}
