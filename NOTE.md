@@ -10,7 +10,7 @@
 | 2     | 2026-08-18 | 基礎建設                  | 1.7k input, 50.0k output   | $4.59  |
 | 3     | 2026-08-18 | 共用元件庫與 Example page | 2.3k input, 137.7k output  | $14.04 |
 | 4     | 2026-08-18 | 首頁與 layout 移植        | 3.0k input, 187.0k output, | $23.13 |
-| 5     | 2026-08-18 | 文章頁移植                |                           |        |
+| 5     | 2026-08-18 | 文章頁移植                | 3.7k input, 240.2k output  | $36.68 |
 
 ---
 
@@ -318,9 +318,9 @@ claude-opus-5: 2.3k input, 137.7k output, 16.4m cache read, 238.5k cache write (
 
 ### 定案的決定
 
-| 議題 | 決定 |
-|---|---|
-| 內文渲染 | 解析成結構化資料，不用 v-html 整篇塞 |
+| 議題     | 決定                                                         |
+| -------- | ------------------------------------------------------------ |
+| 內文渲染 | 解析成結構化資料，不用 v-html 整篇塞                         |
 | 燈箱範圍 | 所有內文圖片都可點開（legacy 只有 7 張標了 `data-fancybox`） |
 
 ### 內文解析
@@ -330,6 +330,7 @@ legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 
 **做法**：離線腳本 `scripts/parse-articles.mjs`（`npm run data:parse`）把 `db.json` 轉成 `articles.json`，內文變成 `blocks[]`。選離線而非 runtime 解析的理由：解析只需跑一次、產出可進版控並人工檢查、`node-html-parser` 不會進 client bundle。
 
 **區塊模型**（`app/types/api/articleContent.ts`）
+
 - `catalog`：本週景點目錄
 - `section`：`layout` 分 `imageLeft` / `imageRight` / `imageFirst` / `textFirst` / `video`，內含順序化的 `parts[]`（heading / list / paragraph / image / imageText / video）
 - `gallery`：三欄圖文（legacy 的 `articleStyle5`）
@@ -340,18 +341,18 @@ legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 
 
 ### 產出
 
-| 檔案 | 說明 |
-|---|---|
-| `scripts/parse-articles.mjs` | HTML → 結構化區塊的轉換腳本 |
-| `app/types/api/articleContent.ts` | 區塊模型 |
-| `app/assets/data/articles.json` | 腳本產出，`ArticleService` 改讀這份 |
-| `components/pages/article/ArticleHero.vue` | 壓暗大圖 + 週次地區，含背景緩移動畫 |
-| `components/pages/article/ArticleBody.vue` | 區塊分派器，燈箱集中在這層，可左右切換全篇圖片 |
-| `components/pages/article/ArticleCatalog.vue` | 可摺疊的景點目錄 |
-| `components/pages/article/ArticleSection.vue` | 五種版面 + 六種 part 的渲染 |
-| `components/pages/article/ArticleGallery.vue` | 三欄圖文 |
-| `components/pages/article/ArticleMapAndTags.vue` | 本週景點地圖 + hashTags |
-| `components/pages/article/ArticleNav.vue` | 上一篇／下一篇，頭尾顯示「沒有上／下一篇囉」 |
+| 檔案                                             | 說明                                           |
+| ------------------------------------------------ | ---------------------------------------------- |
+| `scripts/parse-articles.mjs`                     | HTML → 結構化區塊的轉換腳本                    |
+| `app/types/api/articleContent.ts`                | 區塊模型                                       |
+| `app/assets/data/articles.json`                  | 腳本產出，`ArticleService` 改讀這份            |
+| `components/pages/article/ArticleHero.vue`       | 壓暗大圖 + 週次地區，含背景緩移動畫            |
+| `components/pages/article/ArticleBody.vue`       | 區塊分派器，燈箱集中在這層，可左右切換全篇圖片 |
+| `components/pages/article/ArticleCatalog.vue`    | 可摺疊的景點目錄                               |
+| `components/pages/article/ArticleSection.vue`    | 五種版面 + 六種 part 的渲染                    |
+| `components/pages/article/ArticleGallery.vue`    | 三欄圖文                                       |
+| `components/pages/article/ArticleMapAndTags.vue` | 本週景點地圖 + hashTags                        |
+| `components/pages/article/ArticleNav.vue`        | 上一篇／下一篇，頭尾顯示「沒有上／下一篇囉」   |
 
 `DestinationMap` 加上 `areaLabel` / `height` / `zoom` / `focus` 四個 prop，首頁（全台 zoom 6.5）與文章頁（單週 zoom 14 定在第一個景點）共用。
 
@@ -372,6 +373,7 @@ legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 
 ### 另外修掉的 bug
 
 **Vuetify 的 checkbox / radio 圖示載不出來。** 兩層原因：
+
 1. Vuetify 內建 alias 給的是 `mdi-checkbox-marked`（連字號），`@nuxt/icon` 要 `mdi:checkbox-marked`（冒號）。在 `plugins/vuetify.ts` 加了轉換。
 2. `icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示掃不到。在 `nuxt.config.ts` 加 `VUETIFY_ICONS` 清單點名 35 個。
 
@@ -390,6 +392,14 @@ legacy 把整篇內文以 HTML 存在 `db.json` 的 `content`，用 `innerHTML` 
 - 搜尋結果、關於、登入、編輯頁仍是 `PagePlaceholder`
 - GAS 端未建；`app.baseURL` 正式值待定（repo 名稱未決）
 - login 權限模型仍未拍板
+
+  Total cost: $36.68
+  Total duration (API): 52m 16s
+  Total duration (wall): 3h 30m 19s
+  Total code changes: 2683 lines added, 59 lines removed
+  Usage by model:
+  claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+  claude-opus-5: 3.7k input, 240.2k output, 52.9m cache read, 419.4k cache write ($36.68)
 
 ### 下一步（Phase 6）
 

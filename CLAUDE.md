@@ -120,9 +120,15 @@ app/
 
 ## 部署
 
-- 靜態輸出：`npm run generate` → `.output/public`
-- GitHub Pages 子路徑：`app.baseURL` 由 `NUXT_APP_BASE_URL` 決定，正式建置走 `npm run generate:gh`（讀 `.env.production`）
-- ⚠ **在 Git Bash 用行內環境變數會踩到 MSYS 的 POSIX 路徑轉換**：`NUXT_APP_BASE_URL=/veekend/` 會被改寫成 `C:/Program Files/Git/veekend/`，prerender 全數失敗且**不會報錯**——每頁只產出 `"Redirecting..."`，路由數從 41 掉到 3。要嘛前面加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
+**正式部署走 GitHub Actions**（`.github/workflows/deploy.yml`）：push 到 `main` 就自動建置並發布到 GitHub Pages。
+
+- workflow 用 `NUXT_APP_BASE_URL: /${{ github.event.repository.name }}/` 自動組出子路徑，**改名或搬 repo 都不用改設定**
+- 建置前會跑 `npm run check`（typecheck），失敗就不部署
+- 本機重現正式建置：複製 `.env.example` 成 `.env.production` 填好 `NUXT_APP_BASE_URL`，跑 `npm run generate:gh`
+
+踩過的坑：
+
+- ⚠ **不要在 Git Bash 用行內環境變數**：`NUXT_APP_BASE_URL=/veekend/ npm run generate` 會被 MSYS 的 POSIX 路徑轉換改寫成 `C:/Program Files/Git/veekend/`，建置**回報成功**但每頁只產出 `"Redirecting..."`，路由數從 41 掉到 3。要嘛加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
 - ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `largeCoverUrl`）一律經過 `useAssetUrl()`
 - ⚠ **prerender 的 crawler 會跟著站內連結爬**。連到不存在的路由會讓建置失敗，所以還沒重構的頁面要先用 `PagePlaceholder` 佔住路由
 - ⚠ **圖示要進 client bundle**：`icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示（checkbox、radio、分頁…）掃不到，要在 `nuxt.config.ts` 的 `VUETIFY_ICONS` 點名
