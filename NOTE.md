@@ -945,6 +945,52 @@ payload 含 `"writtenDate": "2026.08.??"`，證明不完整日期能正確通過
 
 `nuxt generate` 389 routes、typecheck、eslint 皆通過。
 
+
+### 部署時又踩了同一個坑
+
+Phase 10 的兩次推送 CI 都失敗，錯誤與 Phase 6 **完全相同**：
+
+```
+npm error code EUSAGE
+Missing: @emnapi/runtime@1.11.3 from lock file
+Missing: @parcel/watcher@2.6.0 from lock file
+```
+
+安裝 zod 時 npm 在 Windows 上增量更新 `package-lock.json`，又把只有 Linux 需要的套件裁掉了。本機 `npm ci` 一路綠燈，只有 Linux runner 會炸。
+
+**CLAUDE.md 裡早就寫了「動過相依之後要重建 package-lock.json」，但我自己沒照做。**
+
+### 所以加了防呆
+
+同一個坑踩第二次，就代表「把規則寫在文件裡」這個做法對這件事無效——要讓機器攔。
+
+新增 `scripts/check-lockfile.mjs`（`npm run deps:check`），檢查 lock 裡有沒有那幾個 Linux 專用套件，並**併進 `npm run check`**（提交前必跑的那個）。
+
+用刻意破壞的 lock 檔驗證過會以離開碼 1 失敗，並印出修法：
+
+```
+✗ package-lock.json 漏掉了 Linux 需要的套件：
+    @emnapi/runtime
+    @parcel/watcher
+
+  本機 npm ci 會過，但 CI 在 Linux 上會以 EUSAGE 失敗。
+  修法：
+    rm -rf node_modules package-lock.json && npm install
+```
+
+### 這次診斷很快
+
+Phase 6 那次因為讀不到 job log，盲猜了三輪才找到原因。當時加的 annotation 機制（把 npm 輸出用 `::error::` 寫成 annotation）這次立刻發揮作用——一查就看到真正的錯誤訊息。
+
+**教訓：一個坑踩第二次時，要問的不是「怎麼修」，而是「為什麼上次記下的規則沒擋住」。** 文件擋不住的，就交給檢查腳本。
+
+### 線上驗證
+
+| 檢查 | 結果 |
+| --- | --- |
+| 七個頁面（含 `/login`、`/article/edit`） | 全部 200 |
+| 登入與編輯頁 | 4.6KB client-only 空殼，符合 `ssr: false` |
+| 首頁 | 54KB，12 篇文章連結都在 |
 ### 待確認／未完成
 
 - 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
