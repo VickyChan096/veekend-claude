@@ -64,3 +64,20 @@ button {
   font: inherit;
   cursor: pointer;
 }
+
+// legacy 的 _reset.scss 給這三個標籤重新定義過語意，內文（db.json 的 content）
+// 就是照這套寫的。**不要改回瀏覽器預設**，不然文章裡的重點與吐槽會失去區別：
+// strong = 粗體、mark = 紅色波浪底線（不是螢光筆）、u = 刪除線（不是底線）
+strong {
+  font-weight: 700;
+}
+
+mark {
+  color: inherit;
+  text-decoration: underline wavy var(--red1);
+  background: none;
+}
+
+u {
+  text-decoration: line-through;
+}

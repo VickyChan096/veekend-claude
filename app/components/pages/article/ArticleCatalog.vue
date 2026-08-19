@@ -14,10 +14,14 @@ const open = ref(true)
 <template>
   <nav class="catalog" aria-label="本週景點目錄">
     <p class="catalog__label">{{ label }}</p>
+    <!--
+      圖示是 ×，收合時才轉 225° 變成 +。方向與直覺相反，但 legacy 就是這樣：
+      展開狀態顯示「可以關掉」，收合狀態顯示「可以打開」。
+    -->
     <button
       type="button"
       class="catalog__toggle"
-      :class="{ 'is-open': open }"
+      :class="{ 'is-closed': !open }"
       :aria-expanded="open"
       :aria-label="open ? '收合景點目錄' : '展開景點目錄'"
       @click="open = !open"
@@ -60,7 +64,7 @@ const open = ref(true)
     border: 0;
     transition: var(--transition-slow);
 
-    &.is-open {
+    &.is-closed {
       color: var(--secondary);
       rotate: 225deg;
     }

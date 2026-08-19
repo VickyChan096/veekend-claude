@@ -4,20 +4,21 @@
 
 ## 總覽
 
-| Phase | 日期       | 內容                       | Tokens                                                | 費用              |
-| ----- | ---------- | -------------------------- | ----------------------------------------------------- | ----------------- |
-| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                                                       |                   |
-| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output                              | $4.59             |
-| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output                             | $14.04            |
-| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output,                            | $23.13            |
-| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output                             | $36.68            |
-| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output,                            | $53.97            |
-| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output                             | $74.10            |
-| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output,                            | $99.39            |
-| 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output                             | $152.44           |
-| 10    | 2026-08-19 | 登入與編輯頁（示範）       | 9.4k input, 576.2k output / 9.4k input, 589.9k output | $196.51 / $205.90 |
-| 11    | 2026-08-19 | 內文版型速查對話框         | 9.4k input, 612.6k output                             | $219.82           |
-| 12    | 2026-08-19 | 大方向收尾（深色模式接上 header、標題結構、SEO、無障礙） |                                                       |                   |
+| Phase | 日期       | 內容                                                     | Tokens                                                | 費用              |
+| ----- | ---------- | -------------------------------------------------------- | ----------------------------------------------------- | ----------------- |
+| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫                                |                                                       |                   |
+| 2     | 2026-08-18 | 基礎建設                                                 | 1.7k input, 50.0k output                              | $4.59             |
+| 3     | 2026-08-18 | 共用元件庫與 Example page                                | 2.3k input, 137.7k output                             | $14.04            |
+| 4     | 2026-08-18 | 首頁與 layout 移植                                       | 3.0k input, 187.0k output,                            | $23.13            |
+| 5     | 2026-08-18 | 文章頁移植                                               | 3.7k input, 240.2k output                             | $36.68            |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages                                    | 4.8k input, 288.3k output,                            | $53.97            |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁                                       | 5.0k input, 318.5k output                             | $74.10            |
+| 8     | 2026-08-18 | Google Sheets + GAS 資料庫                               | 7.2k input, 392.9k output,                            | $99.39            |
+| 9     | 2026-08-18 | 效能與分享優化                                           | 9.2k input, 506.6k output                             | $152.44           |
+| 10    | 2026-08-19 | 登入與編輯頁（示範）                                     | 9.4k input, 576.2k output / 9.4k input, 589.9k output | $196.51 / $205.90 |
+| 11    | 2026-08-19 | 內文版型速查對話框                                       | 9.4k input, 612.6k output                             | $219.82           |
+| 12    | 2026-08-19 | 大方向收尾（深色模式接上 header、標題結構、SEO、無障礙） | 11.8k input, 683.2k output                            | $235.59           |
+| 13    | 2026-08-19 | 內文切版對照 legacy 修正                                 |                                                       |                   |
 
 ---
 
@@ -1122,16 +1123,16 @@ claude-opus-5: 9.4k input, 612.6k output, 354.9m cache read, 2.7m cache write ($
 前 11 個 Phase 都在「把 legacy 搬過來」，功能面已經完整。這次是我先盤點還缺什麼，
 再由你挑要做的項目。盤點出 8 件，你決定：**1~6 與 8 做，7（自動化測試）先跳過**。
 
-| # | 項目 | 狀態 |
-| - | ---- | ---- |
-| 1 | 深淺色模式接到 header | ✅ |
-| 2 | 修正 `<h1>` 結構 | ✅ |
-| 3 | 標籤改用 BaseChip、評分改用 BaseRating | ✅ |
-| 4 | 自訂 404 頁 | ✅ |
-| 5 | 產生 sitemap.xml | ✅ |
-| 6 | 加 skip link | ✅ |
-| 7 | 自動化測試 | ⏭ 這次跳過 |
-| 8 | 讓 `/example` 找得到 | ✅ |
+| #   | 項目                                   | 狀態        |
+| --- | -------------------------------------- | ----------- |
+| 1   | 深淺色模式接到 header                  | ✅          |
+| 2   | 修正 `<h1>` 結構                       | ✅          |
+| 3   | 標籤改用 BaseChip、評分改用 BaseRating | ✅          |
+| 4   | 自訂 404 頁                            | ✅          |
+| 5   | 產生 sitemap.xml                       | ✅          |
+| 6   | 加 skip link                           | ✅          |
+| 7   | 自動化測試                             | ⏭ 這次跳過 |
+| 8   | 讓 `/example` 找得到                   | ✅          |
 
 ---
 
@@ -1169,16 +1170,16 @@ legacy 把站名 logo 包在 `<h1>` 裡（舊時代的 SEO 習慣）。後果是
 
 盤點後每頁剛好一個 h1：
 
-| 頁面 | h1 |
-| ---- | -- |
-| `/` | 週遊記 Veekend — 每週探索一個地區的旅行紀錄（視覺隱藏） |
-| `/article/[week]` | 文章標題 |
-| `/result` | 搜尋結果標題 |
-| `/about` | 關於 VC |
-| `/login` | 登入 |
-| `/article/edit` | 編輯文章 |
-| `/example` | Veekend 元件庫 |
-| `error.vue` | 找不到這一頁 |
+| 頁面              | h1                                                      |
+| ----------------- | ------------------------------------------------------- |
+| `/`               | 週遊記 Veekend — 每週探索一個地區的旅行紀錄（視覺隱藏） |
+| `/article/[week]` | 文章標題                                                |
+| `/result`         | 搜尋結果標題                                            |
+| `/about`          | 關於 VC                                                 |
+| `/login`          | 登入                                                    |
+| `/article/edit`   | 編輯文章                                                |
+| `/example`        | Veekend 元件庫                                          |
+| `error.vue`       | 找不到這一頁                                            |
 
 ---
 
@@ -1208,13 +1209,13 @@ example page 也加上這個變體，免得日後又有人手刻一份。
 不該因為哪天有人寫成別的格式就讓整段消失：
 
 ```ts
-const RATE_PATTERN = /評分\s*[:：]?\s*([\d.]+)/
+const RATE_PATTERN = /評分\s*[:：]?\s*([\d.]+)/;
 const parseRate = (text: string): number | null => {
-  const matched = text.match(RATE_PATTERN)
-  if (!matched) return null
-  const value = Number(matched[1])
-  return Number.isFinite(value) && value >= 0 && value <= 5 ? value : null
-}
+  const matched = text.match(RATE_PATTERN);
+  if (!matched) return null;
+  const value = Number(matched[1]);
+  return Number.isFinite(value) && value >= 0 && value <= 5 ? value : null;
+};
 ```
 
 #### 順手修掉一個 legacy 就有的版面 bug
@@ -1223,10 +1224,10 @@ const parseRate = (text: string): number | null => {
 所以 `[註]` 會飄到隔壁欄**壓在地址文字上**（見下方對照）。既然這一列改成了 flex 容器，
 就把 `::before` 改成一般的 flex 子元素（`position: static; order: 1`），排在星星後面。
 
-| | 之前 | 之後 |
-| - | ---- | ---- |
-| `[註]` 位置 | x ≈ 416（壓到「地址：」） | 星星之後，x ≈ 250 |
-| 提示框 | `right: -45px` | `left: 0; top: 100%` |
+|             | 之前                      | 之後                 |
+| ----------- | ------------------------- | -------------------- |
+| `[註]` 位置 | x ≈ 416（壓到「地址：」） | 星星之後，x ≈ 250    |
+| 提示框      | `right: -45px`            | `left: 0; top: 100%` |
 
 ---
 
@@ -1313,7 +1314,143 @@ Nuxt 的預設錯誤頁長得完全不像這個站。新的 `error.vue`：大數
 - `nuxt generate` 389 routes，sitemap 15 個網址
 - 瀏覽器實測：深色模式切換與保存、404 頁、footer 連結、評分星星、標籤 chip、每頁一個 h1
 
+Total cost: $235.59
+Total duration (API): 2h 48m 40s
+Total duration (wall): 1d 1h 27m
+Total code changes: 7316 lines added, 244 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 11.8k input, 683.2k output, 380.1m cache read, 2.8m cache write ($235.59)
+
 ### 下一步
 
-沒有待辦。之後可做的方向：自動化測試（這次跳過的第 7 項）、搬到有後端的環境、
-編輯既有文章（`/article/edit/[week]`）、無障礙與實機測試。
+接 Phase 13：內文切版與 legacy 逐項對照。
+
+---
+
+## Phase 13 — 內文切版對照 legacy 修正（2026-08-19）
+
+### 起因
+
+你給了三張 legacy 的截圖，說內文切版歪掉了。與其看圖猜，我把 `legacy-app` 也起了一個
+靜態伺服器（`npx serve`，記得關掉 clean URLs，不然 `?week=1` 會被吃掉），
+把同一篇 week 1 在兩邊都打開，用 `getBoundingClientRect` 與 `getComputedStyle`
+逐個元素比對數字。
+
+**這比對照截圖可靠得多**，而且直接找出根因，不是照著症狀改。
+
+---
+
+### 1. 最主要的問題：文字沒有包在同一個 div 裡
+
+legacy 的 DOM 是這樣的：
+
+```html
+<section class="articleStyle1">   <!-- 圖左文右 -->
+  <img>                            <!-- 50% -->
+  <div>                            <!-- 50%, padding-left 20px -->
+    <h4>丸林滷肉飯</h4>
+    <h6>個人評分：3.9</h6>
+    <ul>電話／地址／營業時間</ul>
+  </div>
+</section>
+```
+
+**兩個 flex item。** 我當初把 parts 攤平成 section 的直接子元素，然後給每一個
+（h4、h6、ul）都設 `width: 50%`。四個 50% 的項目在 `flex-wrap: wrap` 下換成兩列：
+
+| | 第一列 | 第二列 |
+| - | ---- | ---- |
+| 之前 | 圖片(50%) + 景點名(50%) | **評分(50%)** + 清單(50%) |
+| legacy | 圖片(50%) + 文字區塊(50%) | — |
+
+所以評分掉到圖片下面去了。`imageRight` 更慘——我用 `flex-direction: row-reverse`
+達成左右對調，但那會把**所有**元素一起倒過來，四個項目換行後圖片跑到左下角。
+
+修法是照 legacy 把連續的文字類元素包成一個 `article-section__body`：
+
+```ts
+const MEDIA_KINDS = new Set(['image', 'imageText', 'video'])
+// 連續的文字元素合併成一個 body group，媒體維持 section 的直接子元素
+```
+
+左右也不再靠 `row-reverse`——**parts 的順序本來就決定了圖在前還是在後**
+（`imageLeft` 是 `image,heading,heading,list`，`imageRight` 是 `heading,heading,list,image`），
+CSS 只要負責寬度與 padding 方向。
+
+修好之後兩邊的數字完全一樣：
+
+| 版面 | legacy | 修正後 |
+| ---- | ------ | ------ |
+| `articleStyle1` / `imageLeft` | IMG x=30 386×241、DIV x=416 386×168 | 一模一樣 |
+| `articleStyle2` / `imageRight` | DIV x=30 386×216、A x=416 386×241 | 一模一樣 |
+
+#### 順帶修好手機版的順序
+
+`textFirst` 手機版是 `flex-direction: column-reverse`。攤平的時候它反轉的是
+「標題、清單、圖片」**每一個元素**，所以清單會跑到自己的標題上面。
+包成 div 之後反轉的是「文字區塊 / 圖片」兩塊，跟 legacy 一致。
+
+#### 這也解釋了 Phase 12 的 [註]
+
+Phase 12 我以為 `[註]` 飄到隔壁欄壓住地址是定位問題，其實是**這個 bug 的症狀**——
+評分那個框根本不該有 50% 寬。改成 flex 子元素的做法留著（比絕對定位穩），
+但註解已經改寫成正確的理由。
+
+---
+
+### 2. `mark` 與 `u` 的語意被瀏覽器預設蓋掉
+
+legacy 的 `_reset.scss` 重新定義過這兩個標籤，而 `db.json` 的內文就是照這套寫的：
+
+| 標籤 | legacy | 我之前 |
+| ---- | ------ | ------ |
+| `mark` | 紅色**波浪**底線（`#e60012`），背景透明 | 黃色螢光筆底 |
+| `u` | **刪除線** | 瀏覽器預設的底線 |
+
+所以「喝ㄎㄧㄤ什麼都好玩」該是被劃掉的吐槽，我這邊卻只是加了底線；
+「歐哩甕」該是紅色波浪線的重點，我這邊變成一塊黃色。已補進 `app/assets/scss/_reset.scss`，
+用 `var(--red1)`（色票裡本來就有 `#e60012`）。
+
+---
+
+### 3. 目錄的開合圖示方向相反
+
+legacy 的圖示是 `fa-circle-xmark`，**展開**時是灰色的 ×（不旋轉），
+**收合**時才轉 225° 變成黑色的 +。我寫成了 `is-open` 才旋轉，剛好相反。
+
+方向與直覺相反（展開顯示「可以關掉」），但那是 legacy 的設計，已照抄並加註解。
+
+---
+
+### 4. 三欄圖文的說明文字
+
+legacy 的 `.articleStyle5` 只設一次 `text-align: center`，標題與說明都吃它，字級 16px。
+我改成了靠左 + 14px。已改回置中 + `body1-regular`（16px）。
+
+---
+
+### 驗證方式
+
+這次全程用 JS 量數字，截圖只當最後確認。過程中又踩到兩次**背景分頁**的坑：
+
+1. 目錄圖示點了之後量到 `rotate: 0deg`、顏色沒變，看起來像 CSS 沒生效。
+   實際上規則有命中（`btn.matches(selector)` 是 true）——**分頁在背景時 CSS transition
+   不會前進**，量到的永遠是起始值。把 `transition` 暫時設成 `none` 再量就對了。
+2. 圖片是 lazy load，背景分頁不會觸發，量到的是骨架的 `aspect-ratio` 而不是真實高度。
+   量之前先把 `loading` 改成 `eager`。
+
+### 還沒動、想先問過你的
+
+- **「點擊看大圖」的顯示時機**：legacy 是 78 張圖裡只有 7 張掛 fancybox，那 7 張的
+  黑色提示條**一直顯示**。我這邊每張圖都能點開，所以改成 hover 才浮出來——
+  46 張圖都常駐一條黑條會很吵。要照 legacy 常駐嗎？
+- **byline 與 briefing 的字重**：legacy 是 12.8px / `font-weight: 300`，
+  我用 design token 的 14px / 400。差異很小，但要完全一致就得寫死尺寸，
+  跟「不寫死 px 字級」的規則衝突。
+
+### 驗證結果
+
+- `npm run check`、`npm run lint` 通過
+- `nuxt generate` 389 routes
+- week 1（五種 section 版面）與 week 2（三欄圖文）與 legacy 逐個元素比對，數字一致

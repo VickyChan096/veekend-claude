@@ -131,6 +131,8 @@ app/
 - **改內文要重跑 `npm run data:parse`**，不要手改 `articles.json`
 - 區塊模型定義在 `app/types/api/articleContent.ts`；新增版型時同時改型別、腳本、`ArticleSection.vue`
 - 只有段落與清單項目保留行內 HTML（`<a>` `<u>` `<mark>` `<br>`），其餘一律走元件
+- ⚠ **legacy 改寫過 `mark` 與 `u` 的語意**，內文就是照那套寫的：`mark` 是**紅色波浪底線**（不是螢光筆）、`u` 是**刪除線**（不是底線）。定義在 `app/assets/scss/_reset.scss`，不要改回瀏覽器預設
+- ⚠ **section 裡連續的文字元素要包在一個 `div` 裡**（`ArticleSection.vue` 的 `groups`）。圖文各半的版面靠那個 div 佔另外 50%；攤平的話標題、評分、清單會各自變成 50% 寬的 flex item，換行後評分掉到圖片下面。左右由 parts 的順序決定，**不要用 `row-reverse`**——那會把後面的元素一起倒過來
 - 腳本遇到不認得的版型 class 會印警告並略過——跑完要看輸出有沒有警告
 
 ## 文字欄位裡的行內 HTML

@@ -92,9 +92,10 @@ const emit = defineEmits<{ (e: 'open-image', fullSrc: string): void }>()
     @include body1-bold;
   }
 
+  // 三欄的說明文字跟著整個區塊置中——legacy 的 .articleStyle5 只設一次 text-align: center，
+  // 標題與說明都吃它。這裡不要改成靠左，兩三行的短說明置中才跟標題對得起來。
   p {
-    @include body2-regular;
-    text-align: left;
+    @include body1-regular;
   }
 
   :deep(a) {
