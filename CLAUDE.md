@@ -141,6 +141,18 @@ app/
 - **`<title>`、meta description、`alt`、`aria-label` 用 `stripHtml()`**（`app/utils/common/text.ts`）
 - 目前只有 week2 的 briefing、week4／week5 的 title 有，但新增文章時要留意
 
+## 圖片
+
+所有內容圖片走 `BaseImage`（`app/components/common/image/BaseImage.vue`），它包了 `<NuxtImg>` 與載入前的灰色骨架。
+
+- ⚠ **一定要給 `sizes`**。只給 `quality` 的話 ipx 只會重新編碼，檔案反而**變大**（實測 -1%~-6%）。省下來的量全部來自縮尺寸
+- ⚠ **`BaseImage` 直接渲染成 `<img>`，不包外層 `<div>`**。包 wrapper 會讓所有既有的 `img { ... }` 樣式失效——側欄頭像、熱門文章縮圖、廣告都曾因此高度變成 0。要調尺寸就照舊直接寫在 `img` 上
+- ⚠ **預先渲染的 HTML 會讓瀏覽器搶在 Vue 之前下載圖片**。下載若在 hydration 前完成，`load` 事件早就過去了，`@load` 收不到、骨架會一直卡著。`BaseImage` 在 `onMounted` 補檢查 `complete`
+- ⚠ **斷點與 `sizes` 寫法要收斂**。每多一種都會多出一整批變體：曾經產出 527 個變體、57MB，比原圖還大。目前只留四個斷點
+- `densities: [1]` 只影響用 `width/height` 指定尺寸的情況；用 `sizes` 時仍會自動補 2 倍 srcset 給高解析螢幕，那是正確行為
+- SVG、logo、社群小圖示**不要**用 `BaseImage`，走 `useAssetUrl()` 的普通 `<img>` 就好
+- 燈箱（`BaseLightbox`）刻意顯示原圖，不走 ipx
+
 ## 部署
 
 **站台：https://vickychan096.github.io/veekend-claude/**（repo `VickyChan096/veekend-claude`）
@@ -159,11 +171,14 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 - ⚠ **不要在 Git Bash 用行內環境變數**：`NUXT_APP_BASE_URL=/x/ npm run generate` 會被 MSYS 的 POSIX 路徑轉換改寫成 `C:/Program Files/Git/x/`，建置**回報成功**但每頁只產出 `"Redirecting..."`。要嘛加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
 - ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `largeCoverUrl`）一律經過 `useAssetUrl()`
 - ⚠ **prerender 的 crawler 會跟著站內連結爬**。連到不存在的路由會讓建置失敗，所以還沒重構的頁面要先用 `PagePlaceholder` 佔住路由
+- ⚠ **CSS 不要內嵌**（`features.inlineStyles: false`）。Noto Sans TC 的 `@font-face` 宣告有 425KB，內嵌會讓每個用到字型的元件各塞一份——首頁曾因此變成 4.3MB（gzip 後 1.67MB），而且內嵌就不能跨頁快取
+- ⚠ **`nitro.prerender.concurrency: 4` 不能拿掉**。ipx 與頁面 prerender 搶資源會讓隨機頁面冒出 `[unhandled] 500`，三次建置會掛一次，而且每次錯在不同頁面
+- ⚠ **`og:image` / `og:url` 一定要絕對網址**。社群平台不吃相對路徑，分享出去不會有預覽圖。用 `useAssetUrl().absoluteUrl()`，站台網址由 workflow 依 repo 自動組出
 - ⚠ **圖示要進 client bundle**：`icon.clientBundle.scan` 只掃得到原始碼裡寫死的名稱，Vuetify 執行期才從 alias 取的圖示掃不到，要在 `nuxt.config.ts` 的 `VUETIFY_ICONS` 點名
 
 ## 現況
 
-Phase 1–8 完成：基礎建設、共用元件庫、各頁面移植、部署上線、資料庫改用 Google Sheets。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–9 完成：基礎建設、共用元件庫、各頁面移植、部署上線、資料庫改用 Google Sheets、效能與分享優化。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
@@ -175,7 +190,8 @@ Phase 1–8 完成：基礎建設、共用元件庫、各頁面移植、部署�
 - `app/pages/about.vue`——錯位色塊的關於頁
 - 資料層——`ArticleService` 建置時讀 GAS（Google Sheets），未設定則退回本地 JSON
 - 內文解析——`npm run data:parse`（備份資料用）；正式內容改在 Sheets 編輯
-- 資產——`public/images/`（132 檔）
+- 資產——`public/images/`（132 檔），建置時由 ipx 產生縮圖與 WebP
+- 效能——首頁 gzip 8.7KB（CSS 外部化前是 1672KB）；封面圖手機尺寸 34KB（原圖 453KB）
 
 尚未處理：
 - 登入與文章編輯頁——目前是 `PagePlaceholder`

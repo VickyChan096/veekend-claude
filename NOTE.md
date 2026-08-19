@@ -4,16 +4,17 @@
 
 ## 總覽
 
-| Phase | 日期       | 內容                       | Tokens                     | 費用   |
-| ----- | ---------- | -------------------------- | -------------------------- | ------ |
-| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                            |        |
-| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output   | $4.59  |
-| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output  | $14.04 |
-| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output, | $23.13 |
-| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output  | $36.68 |
-| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output, | $53.97 |
-| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10 |
-| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39 |
+| Phase | 日期       | 內容                       | Tokens                     | 費用    |
+| ----- | ---------- | -------------------------- | -------------------------- | ------- |
+| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                            |         |
+| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output   | $4.59   |
+| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output  | $14.04  |
+| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output, | $23.13  |
+| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output  | $36.68  |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output, | $53.97  |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10  |
+| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39  |
+| 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output  | $152.44 |
 
 ---
 
@@ -657,17 +658,16 @@ Usage by model:
 claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
 claude-opus-5: 7.2k input, 392.9k output, 148.1m cache read, 1.5m cache writ
 
-
 ### 追加：改試算表自動重建
 
 原本改完內容要手動到 Actions 按 Run workflow。Vicky 提出期望是「頁面資料完全由 API 渲染，不要每次都重新部署上版」，於是重新檢視這個決定。
 
 **先量測再決定**：
 
-| | 回應時間 |
-| --- | --- |
-| GAS API | 首次 15.5 秒、暖機後 4.9s / 4.2s |
-| 目前的靜態頁 | 0.66 秒 |
+|              | 回應時間                         |
+| ------------ | -------------------------------- |
+| GAS API      | 首次 15.5 秒、暖機後 4.9s / 4.2s |
+| 目前的靜態頁 | 0.66 秒                          |
 
 GAS 是給腳本用的，不是給網站流量用的。改成訪客即時抓的話，每個人打開網站要等 4～15 秒，而且失去 SEO 與 LINE／FB 分享預覽，新文章的網址還會 404（靜態站沒有對應的 HTML 檔）。
 
@@ -679,12 +679,12 @@ GAS 是給腳本用的，不是給網站流量用的。改成訪客即時抓的�
 
 workflow 加上 `repository_dispatch`（`types: [sheets-updated]`）。GAS 端新增：
 
-| 函式 | 作用 |
-| --- | --- |
-| `onEditTrigger` | 安裝式觸發器，任何編輯只記下時間戳 |
-| `checkAndDeploy` | 每分鐘檢查，有新編輯且停手滿 60 秒才送出 |
-| `triggerDeploy` | 呼叫 GitHub dispatches API |
-| `testDeploy` / `installTriggers` | 手動驗證與一鍵安裝觸發器 |
+| 函式                             | 作用                                     |
+| -------------------------------- | ---------------------------------------- |
+| `onEditTrigger`                  | 安裝式觸發器，任何編輯只記下時間戳       |
+| `checkAndDeploy`                 | 每分鐘檢查，有新編輯且停手滿 60 秒才送出 |
+| `triggerDeploy`                  | 呼叫 GitHub dispatches API               |
+| `testDeploy` / `installTriggers` | 手動驗證與一鍵安裝觸發器                 |
 
 不在 `onEdit` 直接送出，是因為改一篇文章通常會動十幾格，每格都觸發就會排隊建置十幾次。先記錄、停手後再送，一次就好。
 
@@ -692,12 +692,12 @@ workflow 加上 `repository_dispatch`（`types: [sheets-updated]`）。GAS 端�
 
 ### 實測結果
 
-| 時間（UTC） | 事件 |
-| --- | --- |
-| 08:56:49 | 在試算表改 week 9 標題，`onEditTrigger` 記下時間 |
-| 08:58:32 | 停手滿 60 秒，`checkAndDeploy` 送出建置請求 |
-| 08:58:34 | GitHub 收到 `repository_dispatch`，開始建置 |
-| 約 09:01 | 建置完成，新標題上線 |
+| 時間（UTC） | 事件                                             |
+| ----------- | ------------------------------------------------ |
+| 08:56:49    | 在試算表改 week 9 標題，`onEditTrigger` 記下時間 |
+| 08:58:32    | 停手滿 60 秒，`checkAndDeploy` 送出建置請求      |
+| 08:58:34    | GitHub 收到 `repository_dispatch`，開始建置      |
+| 約 09:01    | 建置完成，新標題上線                             |
 
 **從改完到上線約 3～4 分鐘**（`checkAndDeploy` 每分鐘才檢查一次，所以會多等最多 60 秒），全程不用按任何按鈕。
 
@@ -710,6 +710,7 @@ Vicky 回報「改了資料但沒有觸發 actions」，我查 GitHub 發現確�
 正確的做法應該是先看 `LAST_EDIT_AT` / `LAST_DEPLOY_AT` 這兩個時間戳（它們就是這個機制的狀態），而不是只看 GitHub 一眼就下結論。後來也是靠這兩個數值才釐清的。
 
 教訓：**非同步機制要看它自己的狀態，不要只看下游有沒有結果**——下游還沒動，可能只是還沒輪到。
+
 ### 待確認／未完成
 
 - **`doPost` 尚未接到前端**：純靜態站的 API 金鑰必然外洩（要能送請求就得存在瀏覽器裡）。目前的金鑰擋得住隨機掃描，擋不住開開發者工具的人。兩條替代做法寫在 `docs/gas-setup.md` 最後
@@ -722,3 +723,94 @@ Vicky 回報「改了資料但沒有觸發 actions」，我查 GitHub 發現確�
 既然資料已經在 Sheets，「編輯直接在試算表做、網站不放編輯功能」也是完全合理的選項。
 
 > 提醒：驗證自動重建時在試算表留了測試標題（week 7「測試板橋區Title」、week 8「測試石碇區Title」、week 9「信義區測試Title」），要記得改回「未完成」。
+
+---
+
+## Phase 9 — 效能與分享優化（2026-08-18）
+
+### 做了什麼
+
+上線後實測站台，發現三個直接影響使用者的問題，一次修完。
+
+| 項目               | 優化前                   | 優化後       |
+| ------------------ | ------------------------ | ------------ |
+| 首頁 HTML          | 4310 KB                  | **53 KB**    |
+| 首頁 gzip 傳輸     | 1672 KB                  | **8.7 KB**   |
+| 封面圖（手機尺寸） | 453 KB                   | **34 KB**    |
+| `og:image`         | 相對路徑，分享沒有預覽圖 | **絕對網址** |
+
+### 問題一：首頁 gzip 後 1.67 MB
+
+原因不是 Vuetify，是 **`@nuxt/fonts` 把 Noto Sans TC 的 `@font-face` 宣告內嵌了 10 次**。中文字型切成幾百個 unicode-range 子集，光是宣告就 425 KB，Nuxt 預設又會把 CSS 內嵌進 HTML，每個用到字型的元件各塞一份。而且內嵌的 CSS **不能跨頁快取**，換頁要重新下載。
+
+解法：`features.inlineStyles: false`。CSS 變成 13 個外部檔，可以跨頁快取重用。
+
+### 問題二：`og:image` 是相對路徑
+
+```html
+<meta property="og:image" content="/veekend-claude/images/week1/cover.jpg" />
+```
+
+Facebook、LINE、Twitter 都不接受相對路徑——分享文章到 LINE 不會出現封面圖。對圖文並茂的旅遊部落格來說損失不小。
+
+解法：加 `runtimeConfig.public.siteUrl` 與 `useAssetUrl().absoluteUrl()`，文章頁與首頁的 `og:image` / `og:url` 都改成絕對網址，首頁另補上 legacy 就有的 `1200x630.jpg`。站台網址由 workflow 依 repo 自動組出，不用手動設定。
+
+修正過程順帶抓到一個 bug：`absoluteUrl('')` 組出的首頁 `og:url` 少了子路徑——`assetUrl` 遇到空字串會提早回傳空值，改成回傳 `baseURL`。
+
+### 問題三：圖片完全沒最佳化
+
+30 MB、單張最大 1.4 MB，`image.provider: 'none'`（Phase 2 為了 SSG 相容設的）等於 `<NuxtImg>` 沒作用。
+
+Vicky 指定要試 `NuxtImg`（先前自己試過沒成功），並希望加上載入時的灰色骨架。
+
+解法：改用 `ipx` provider。`nuxt generate` 時會自動切成靜態模式，建置階段就把縮圖與 WebP 產好放進 `_ipx/`，執行期不需要伺服器，**原始圖檔完全不動**。
+
+新增 `BaseImage` 元件，同時處理建置時縮圖與載入前的骨架，已加進元件展示頁。
+
+```
+week1/cover.jpg 453 KB
+  → 480px   34 KB
+  → 640px   53 KB
+  → 960px   99 KB
+  → 1280px 151 KB
+```
+
+### NuxtImg 之前為什麼會失敗
+
+**只設 `quality` 不設 `sizes` 的話，ipx 只是重新編碼，檔案反而更大**——實測是 -1% ~ -6%（也就是變大）。省下來的量全部來自縮尺寸，而縮尺寸需要 `sizes` 告訴它版面實際多寬。
+
+`BaseImage` 已經把這件事包起來，之後直接用就好。
+
+### 踩到的坑（都記進 CLAUDE.md）
+
+1. **只給 quality 不給 sizes**：如上，檔案反而更大。
+2. **斷點太多會爆量**：一度產出 527 個變體、57 MB，比原圖還大，還出現 `w_2400` 這種巨圖。收斂成四個斷點後降到 353 個。
+3. **建置會隨機失敗**：ipx 與頁面 prerender 搶資源，**三次會掛一次**，而且每次錯在不同頁面（`[unhandled] 500`）。設 `nitro.prerender.concurrency: 4` 後三次全過。這個很陰險——不連跑幾次根本不會發現。
+4. **`BaseImage` 一開始包了一層 `<div>`**，讓所有既有的 `img { ... }` 樣式失效——側欄頭像、熱門文章縮圖、廣告的高度全變成 0。改成**直接渲染 `<img>`、骨架用 CSS 背景**做才解決。這是本輪最大的設計失誤，連續兩輪都在修它造成的回歸。
+5. **預先渲染的 HTML 會讓瀏覽器搶先下載圖片**：如果下載在 hydration 完成前就結束，`load` 事件早就過去了，`@load` 監聽器永遠收不到，骨架會一直卡著。`onMounted` 補檢查 `complete`。
+6. **`densities: [1]` 對 `sizes` 不生效**：`sizes` 仍會自動補 2 倍的 srcset 給高解析螢幕。那是正確行為（瀏覽器只挑一個下載），我原本的註解寫錯了，已更正。
+
+### 一個驗證失誤
+
+我一度以為「圖片全都不載入」，查了很久：屬性正常、尺寸正常、直接 `fetch` 回 200，就是不下載。最後發現是**瀏覽器分頁在背景**（`visibilityState: hidden`），而 Chrome 不會為背景分頁觸發 lazy loading。
+
+是測試方法的問題，不是程式的問題。截圖強制渲染後就正常了。
+
+教訓：**用瀏覽器自動化驗證時，要先確認分頁是可見的**，否則 lazy load、動畫、IntersectionObserver 這類與可見性綁定的行為都不會發生。
+
+### 驗證結果
+
+- 三次建置全過（394 routes），typecheck、eslint 通過
+- 瀏覽器截圖確認骨架顯示正確（未載入的卡片是灰色區塊）
+- 線上驗證：五個頁面全 200、首頁 gzip 8.7 KB、`og:image` 為絕對網址、圖片走 `_ipx`
+
+### 待確認／未完成
+
+- 登入頁與文章編輯頁仍是 `PagePlaceholder`
+- `doPost` 寫入 API 已就緒但未接前端（靜態站金鑰必然外洩，待權限模型決定）
+
+### 下一步
+
+只剩 `login` 與 `articleEdit`。兩者卡在同一個決定：純靜態站做不了真正的身分驗證。
+
+既然資料已經在 Sheets，「編輯直接在試算表做、網站不放編輯功能」仍是完全合理的選項。
