@@ -153,6 +153,25 @@ app/
 - SVG、logo、社群小圖示**不要**用 `BaseImage`，走 `useAssetUrl()` 的普通 `<img>` 就好
 - 燈箱（`BaseLightbox`）刻意顯示原圖，不走 ipx
 
+## 登入與編輯
+
+`/login` 與 `/article/edit` 是**示範用**的：登入是假驗證，送出只把資料印到 Console。實際新增內容在 Google 試算表操作。
+
+**為什麼不能做真的**：GitHub Pages 只送檔案、不執行程式，所有判斷邏輯都得在瀏覽器裡跑——使用者看得到也改得動。寫入 API 的金鑰同理，要能送出請求就必須存在瀏覽器裡。這是架構限制，不是寫法問題。
+
+**分層**（搬到有後端的環境時只換最底層）：
+
+```
+表單元件  ──►  DTO（契約）  ──►  ArticleWriteService / useAuth
+（不用動）      （不用動）         （搬家時只換這兩個）
+```
+
+- DTO 在 `app/types/api/dto/`，用 zod 定義，**型別由 schema 推導**（`z.infer`）——驗證與型別同一份來源
+- DTO 刻意與 domain 型別（`types/api/article.ts`）分開：domain 是「畫面要用的形狀」，DTO 是「跟後端往來的形狀」
+- ⚠ **zod 不要出現在全域 plugin 引入的東西裡**。`useAuth` 曾用 zod 驗 session，導致它被打包進共用 chunk，每一頁的訪客都要多下載 66KB。全域 plugin 引入的相依會進共用 chunk，加之前先想清楚
+- ⚠ **`definePageMeta` 在 `imports.autoImport: false` 下 TypeScript 認不得**。路由設定放 `nuxt.config` 的 `routeRules`，middleware 用 `auth.global.ts` + 路徑清單
+- `RepeaterField`（`components/common/form/`）是可新增／刪除／排序的清單欄位，景點、內文區塊、區塊內元素、三欄圖文共用
+
 ## 部署
 
 **站台：https://vickychan096.github.io/veekend-claude/**（repo `VickyChan096/veekend-claude`）
@@ -178,7 +197,7 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 ## 現況
 
-Phase 1–9 完成：基礎建設、共用元件庫、各頁面移植、部署上線、資料庫改用 Google Sheets、效能與分享優化。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–10 完成：legacy 的頁面已全部移植，資料改用 Google Sheets，並補上示範用的登入與編輯頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
@@ -188,12 +207,12 @@ Phase 1–9 完成：基礎建設、共用元件庫、各頁面移植、部署�
 - `app/pages/article/[week].vue`——hero、結構化內文、燈箱、本週地圖、上下篇導覽
 - `app/pages/result.vue`——三種查詢模式（`?tags=` / `?all=` / `?search=`），client 端篩選
 - `app/pages/about.vue`——錯位色塊的關於頁
+- `app/pages/login.vue`、`app/pages/article/edit.vue`——**示範用**，假登入與 console.log 送出
 - 資料層——`ArticleService` 建置時讀 GAS（Google Sheets），未設定則退回本地 JSON
 - 內文解析——`npm run data:parse`（備份資料用）；正式內容改在 Sheets 編輯
 - 資產——`public/images/`（132 檔），建置時由 ipx 產生縮圖與 WebP
 - 效能——首頁 gzip 8.7KB（CSS 外部化前是 1672KB）；封面圖手機尺寸 34KB（原圖 453KB）
 
 尚未處理：
-- 登入與文章編輯頁——目前是 `PagePlaceholder`
-- `doPost` 寫入 API 已就緒但未接前端（靜態站金鑰必然外洩，待權限模型決定）
-- login 權限模型待決
+- 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
+- `doPost` 寫入 API 已就緒但未接前端——真正要能寫入，得先搬到有後端的環境

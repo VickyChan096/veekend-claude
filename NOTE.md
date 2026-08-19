@@ -15,6 +15,7 @@
 | 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10  |
 | 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39  |
 | 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output  | $152.44 |
+| 10    | 2026-08-19 | 登入與編輯頁（示範）       |                            |        |
 
 ---
 
@@ -821,3 +822,137 @@ week1/cover.jpg 453 KB
 只剩 `login` 與 `articleEdit`。兩者卡在同一個決定：純靜態站做不了真正的身分驗證。
 
 既然資料已經在 Sheets，「編輯直接在試算表做、網站不放編輯功能」仍是完全合理的選項。
+
+---
+
+## Phase 10 — 登入與編輯頁（示範）（2026-08-19）
+
+### 做了什麼
+
+做出登入 → 編輯 → 送出的完整流程。
+
+⚠ **這兩頁是示範用的**：登入是假驗證，送出只把資料印到 Console，不會寫進 Sheets。實際新增內容仍在 Google 試算表操作。
+
+會做的原因是 Vicky 提出的目標：**「這個專案或許可以正式移動到可以登入編輯的空間，到時候移動時的陣痛希望可以降到最低」**。所以重點不在頁面本身，而在把分層先接好。
+
+### 先釐清的問題：為什麼靜態網站做不了真正的驗證
+
+一般網站的驗證發生在**使用者碰不到的伺服器上**。GitHub Pages 只會把檔案原封不動送出去，不執行任何程式——所有判斷邏輯都得在瀏覽器裡跑，使用者完全看得到、改得動。
+
+```js
+if (password === '你的密碼') { 顯示編輯功能 }   // 這段會下載到使用者的瀏覽器
+```
+
+按 F12 就能看到密碼，或直接呼叫 `顯示編輯功能()`。**這不是寫得好不好的問題，是架構上不可能。**
+
+寫入 API 的金鑰同理：要讓網站送出寫入請求，金鑰就必須存在瀏覽器裡，於是它就公開了。
+
+### 順便做的金鑰稽核
+
+掃過線上 27 個 JS 檔與整份 git 歷史：
+
+| 金鑰 | 狀態 |
+| --- | --- |
+| `API_KEY` | ✅ 不在網站、不在 repo、不在 git 歷史 |
+| `GITHUB_TOKEN` | ✅ 同上（docs 裡只有 `github_pat_...` 佔位寫法） |
+| `.env` | ✅ 沒進版控 |
+| GAS 網址 | ⚠ 公開在首頁 HTML（`runtimeConfig.public`） |
+
+GAS 網址公開本身不嚴重——那支 API 只回公開文章，讀未發佈與寫入都要 `apiKey`，而 `apiKey` 不在前端任何地方。唯一副作用是別人可以灌爆 Google 配額（每天 20,000 次）。
+
+### 定案的決定
+
+| 議題 | 決定 |
+| --- | --- |
+| 型別來源 | DTO + 執行期驗證（zod） |
+| 編輯範圍 | 連內文區塊一起做 |
+| 登入驗證 | 固定帳密（`vc` / `veekend`），邏輯集中在 `useAuth()` |
+
+### 為什麼不走 OpenAPI
+
+002_View 是從**執行中的 .NET API** 抓 OpenAPI 規格再產型別。我們的 GAS 沒有那個端點，硬寫一份 YAML 只會多一個容易跟程式碼不同步的檔案。
+
+改用 **zod schema 當單一來源**：型別由 schema 推導（`z.infer`），所以不會出現「型別說是 number、實際傳 string」這種對不上的情況。
+
+### 分層設計
+
+```
+表單元件  ──►  DTO（契約）  ──►  ArticleWriteService / useAuth
+（不用動）      （不用動）         （搬家時只換這兩個）
+```
+
+搬到有後端的環境時要改的只有兩個檔案：
+
+| 檔案 | 現在 | 之後 |
+| --- | --- | --- |
+| `useAuth.ts` | 假帳密比對 | `POST /auth/login`，token 改存 HttpOnly cookie |
+| `ArticleWriteService.ts` | `console.log` | `$fetch(url, { method: 'POST', headers })` |
+
+兩個檔案都寫了註解標出「這裡就是之後要換掉的地方」，真後端版本的程式碼長相也先寫在註解裡。
+
+### 產出
+
+| 檔案 | 說明 |
+| --- | --- |
+| `types/api/dto/article.dto.ts` | 文章、景點、區塊、7 種元素的 schema；型別由 schema 推導 |
+| `types/api/dto/auth.dto.ts` | 登入請求與 session |
+| `composables/common/useAuth.ts` | 假驗證，但介面照真的設計（token、過期時間、restore） |
+| `middleware/auth.global.ts` | 用路徑清單保護 `/article/edit` |
+| `services/pages/ArticleWriteService.ts` | 驗證後 console.log |
+| `components/common/form/RepeaterField.vue` | 可新增／刪除／排序的清單，四處共用 |
+| `components/pages/edit/BlockEditor.vue` 等三個 | 完整的內文區塊編輯 |
+| `pages/login.vue`、`pages/article/edit.vue` | 兩個頁面 |
+
+DTO 刻意與 domain 型別（`types/api/article.ts`）分開：domain 描述「畫面要用的形狀」，DTO 描述「跟後端往來的形狀」。現在兩者幾乎一樣，但換後端時才不用動畫面。
+
+### 踩到的坑
+
+**1. zod 差點污染全站（最重要的一個）**
+
+`useAuth` 原本用 `sessionSchema` 驗 localStorage，而 `useAuth` 由全域 plugin 建立——結果 zod 被打包進**共用 chunk**，每一頁的訪客都要多下載 66KB。這會直接抵銷 Phase 9 的效能成果。
+
+改成手寫三個欄位的檢查（`typeof` 判斷就夠），zod 只留在編輯頁那條路徑。已驗證首頁與各內容頁都不載入它。
+
+教訓：**全域 plugin 引入的東西會進共用 chunk**，加相依前要想清楚它會不會被所有頁面下載。
+
+**2. `definePageMeta` 在 autoImport 關著時 TypeScript 認不得**
+
+改用兩種替代：路由層級的設定放 `nuxt.config` 的 `routeRules`（對齊 002_View），middleware 改成全域 + 路徑清單。集中在一處也比較容易看出哪些頁面受保護。
+
+**3. 日曆選不出 `2022.12.??`**
+
+legacy 資料有「只記得月份」的撰寫日期，DTO 也允許，但 `BaseDatepicker` 是唯讀的、只能用日曆選。所以造訪日期用日曆、撰寫日期改文字輸入。這是資料現實逼出來的設計。
+
+**4. 登入頁警語的 `<strong>` 被 flex 當成獨立欄**
+
+文字被拆成奇怪的直排，包一層 `<span>` 才正常。截圖才看得出來。
+
+### 驗證結果
+
+瀏覽器實測整條流程：
+
+| 測試 | 結果 |
+| --- | --- |
+| 未登入直接開 `/article/edit` | 導向 `/login?redirect=/article/edit` ✅ |
+| 錯誤帳密 | 顯示「帳號或密碼不正確」 ✅ |
+| 正確帳密 | 登入後回到編輯頁，session 寫入 localStorage ✅ |
+| 空表單送出 | 擋下 8 個問題並標出欄位路徑（`article.title` 等） ✅ |
+| 填妥後送出 | Console 印出通過驗證的 payload ✅ |
+
+payload 含 `"writtenDate": "2026.08.??"`，證明不完整日期能正確通過驗證。
+
+`nuxt generate` 389 routes、typecheck、eslint 皆通過。
+
+### 待確認／未完成
+
+- 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
+- 真正要能寫入，需要先決定搬到哪種有後端的環境
+
+### 下一步
+
+legacy 的頁面全部移植完了。之後可以做的方向：
+
+1. **搬到有後端的環境**（Cloudflare Pages + Workers、Vercel 等），讓登入與編輯真正可用
+2. **編輯既有文章**：加 `/article/edit/[week]`，載入現有資料後修改
+3. 其他改善：無障礙檢查、實機測試
+
