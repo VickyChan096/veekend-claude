@@ -185,7 +185,9 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 踩過的坑：
 
-- ⚠ **動過相依之後要重建 `package-lock.json`**。在 Windows 上多輪 `npm uninstall` / `npm install` 會讓 lock 漏掉只有 Linux 需要的套件（`@emnapi/*`、`@parcel/watcher`），**本機 `npm ci` 一路綠燈但 CI 秒炸**（EUSAGE / Missing from lock file）。解法是刪掉 `node_modules` 與 `package-lock.json` 重跑 `npm install`
+- ⚠ **動過相依之後一定要重建 `package-lock.json`**。在 Windows 上跑 `npm install <套件>` 時，npm 會增量更新 lock 並把當下平台用不到的相依裁掉（`@emnapi/*`、`@parcel/watcher`）——**本機 `npm ci` 一路綠燈但 CI 在 Linux 上秒炸**（EUSAGE / Missing from lock file）。
+  解法：`rm -rf node_modules package-lock.json && npm install`
+  這個坑 Phase 6 與 Phase 10 各踩過一次，所以加了 `npm run deps:check`（已併進 `npm run check`）在本機就攔下來。**提交前跑一次 `npm run check`**
 - ⚠ **CI 的 job log 需要 repo admin 權限**才讀得到。workflow 裡的 `Install dependencies` 會把 npm 輸出用 `::error::` 寫成 annotation，那個走公開 API 就讀得到——CI 出問題先看 annotation，不要盲猜
 - ⚠ **不要在 Git Bash 用行內環境變數**：`NUXT_APP_BASE_URL=/x/ npm run generate` 會被 MSYS 的 POSIX 路徑轉換改寫成 `C:/Program Files/Git/x/`，建置**回報成功**但每頁只產出 `"Redirecting..."`。要嘛加 `MSYS_NO_PATHCONV=1`，要嘛走 `--dotenv`（讀檔不經過 shell）
 - ⚠ **`public/` 底下的資源路徑不會自動補 baseURL**。資料裡帶路徑的圖片（例如 `largeCoverUrl`）一律經過 `useAssetUrl()`

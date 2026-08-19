@@ -15,7 +15,7 @@
 | 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10  |
 | 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39  |
 | 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output  | $152.44 |
-| 10    | 2026-08-19 | 登入與編輯頁（示範）       |                            |        |
+| 10    | 2026-08-19 | 登入與編輯頁（示範）       | 9.4k input, 576.2k output  | $196.51 |
 
 ---
 
@@ -840,7 +840,9 @@ week1/cover.jpg 453 KB
 一般網站的驗證發生在**使用者碰不到的伺服器上**。GitHub Pages 只會把檔案原封不動送出去，不執行任何程式——所有判斷邏輯都得在瀏覽器裡跑，使用者完全看得到、改得動。
 
 ```js
-if (password === '你的密碼') { 顯示編輯功能 }   // 這段會下載到使用者的瀏覽器
+if (password === "你的密碼") {
+  顯示編輯功能;
+} // 這段會下載到使用者的瀏覽器
 ```
 
 按 F12 就能看到密碼，或直接呼叫 `顯示編輯功能()`。**這不是寫得好不好的問題，是架構上不可能。**
@@ -851,21 +853,21 @@ if (password === '你的密碼') { 顯示編輯功能 }   // 這段會下載到�
 
 掃過線上 27 個 JS 檔與整份 git 歷史：
 
-| 金鑰 | 狀態 |
-| --- | --- |
-| `API_KEY` | ✅ 不在網站、不在 repo、不在 git 歷史 |
+| 金鑰           | 狀態                                             |
+| -------------- | ------------------------------------------------ |
+| `API_KEY`      | ✅ 不在網站、不在 repo、不在 git 歷史            |
 | `GITHUB_TOKEN` | ✅ 同上（docs 裡只有 `github_pat_...` 佔位寫法） |
-| `.env` | ✅ 沒進版控 |
-| GAS 網址 | ⚠ 公開在首頁 HTML（`runtimeConfig.public`） |
+| `.env`         | ✅ 沒進版控                                      |
+| GAS 網址       | ⚠ 公開在首頁 HTML（`runtimeConfig.public`）      |
 
 GAS 網址公開本身不嚴重——那支 API 只回公開文章，讀未發佈與寫入都要 `apiKey`，而 `apiKey` 不在前端任何地方。唯一副作用是別人可以灌爆 Google 配額（每天 20,000 次）。
 
 ### 定案的決定
 
-| 議題 | 決定 |
-| --- | --- |
-| 型別來源 | DTO + 執行期驗證（zod） |
-| 編輯範圍 | 連內文區塊一起做 |
+| 議題     | 決定                                                 |
+| -------- | ---------------------------------------------------- |
+| 型別來源 | DTO + 執行期驗證（zod）                              |
+| 編輯範圍 | 連內文區塊一起做                                     |
 | 登入驗證 | 固定帳密（`vc` / `veekend`），邏輯集中在 `useAuth()` |
 
 ### 為什麼不走 OpenAPI
@@ -883,25 +885,25 @@ GAS 網址公開本身不嚴重——那支 API 只回公開文章，讀未發�
 
 搬到有後端的環境時要改的只有兩個檔案：
 
-| 檔案 | 現在 | 之後 |
-| --- | --- | --- |
-| `useAuth.ts` | 假帳密比對 | `POST /auth/login`，token 改存 HttpOnly cookie |
-| `ArticleWriteService.ts` | `console.log` | `$fetch(url, { method: 'POST', headers })` |
+| 檔案                     | 現在          | 之後                                           |
+| ------------------------ | ------------- | ---------------------------------------------- |
+| `useAuth.ts`             | 假帳密比對    | `POST /auth/login`，token 改存 HttpOnly cookie |
+| `ArticleWriteService.ts` | `console.log` | `$fetch(url, { method: 'POST', headers })`     |
 
 兩個檔案都寫了註解標出「這裡就是之後要換掉的地方」，真後端版本的程式碼長相也先寫在註解裡。
 
 ### 產出
 
-| 檔案 | 說明 |
-| --- | --- |
-| `types/api/dto/article.dto.ts` | 文章、景點、區塊、7 種元素的 schema；型別由 schema 推導 |
-| `types/api/dto/auth.dto.ts` | 登入請求與 session |
-| `composables/common/useAuth.ts` | 假驗證，但介面照真的設計（token、過期時間、restore） |
-| `middleware/auth.global.ts` | 用路徑清單保護 `/article/edit` |
-| `services/pages/ArticleWriteService.ts` | 驗證後 console.log |
-| `components/common/form/RepeaterField.vue` | 可新增／刪除／排序的清單，四處共用 |
-| `components/pages/edit/BlockEditor.vue` 等三個 | 完整的內文區塊編輯 |
-| `pages/login.vue`、`pages/article/edit.vue` | 兩個頁面 |
+| 檔案                                           | 說明                                                    |
+| ---------------------------------------------- | ------------------------------------------------------- |
+| `types/api/dto/article.dto.ts`                 | 文章、景點、區塊、7 種元素的 schema；型別由 schema 推導 |
+| `types/api/dto/auth.dto.ts`                    | 登入請求與 session                                      |
+| `composables/common/useAuth.ts`                | 假驗證，但介面照真的設計（token、過期時間、restore）    |
+| `middleware/auth.global.ts`                    | 用路徑清單保護 `/article/edit`                          |
+| `services/pages/ArticleWriteService.ts`        | 驗證後 console.log                                      |
+| `components/common/form/RepeaterField.vue`     | 可新增／刪除／排序的清單，四處共用                      |
+| `components/pages/edit/BlockEditor.vue` 等三個 | 完整的內文區塊編輯                                      |
+| `pages/login.vue`、`pages/article/edit.vue`    | 兩個頁面                                                |
 
 DTO 刻意與 domain 型別（`types/api/article.ts`）分開：domain 描述「畫面要用的形狀」，DTO 描述「跟後端往來的形狀」。現在兩者幾乎一樣，但換後端時才不用動畫面。
 
@@ -931,13 +933,13 @@ legacy 資料有「只記得月份」的撰寫日期，DTO 也允許，但 `Base
 
 瀏覽器實測整條流程：
 
-| 測試 | 結果 |
-| --- | --- |
-| 未登入直接開 `/article/edit` | 導向 `/login?redirect=/article/edit` ✅ |
-| 錯誤帳密 | 顯示「帳號或密碼不正確」 ✅ |
-| 正確帳密 | 登入後回到編輯頁，session 寫入 localStorage ✅ |
-| 空表單送出 | 擋下 8 個問題並標出欄位路徑（`article.title` 等） ✅ |
-| 填妥後送出 | Console 印出通過驗證的 payload ✅ |
+| 測試                         | 結果                                                 |
+| ---------------------------- | ---------------------------------------------------- |
+| 未登入直接開 `/article/edit` | 導向 `/login?redirect=/article/edit` ✅              |
+| 錯誤帳密                     | 顯示「帳號或密碼不正確」 ✅                          |
+| 正確帳密                     | 登入後回到編輯頁，session 寫入 localStorage ✅       |
+| 空表單送出                   | 擋下 8 個問題並標出欄位路徑（`article.title` 等） ✅ |
+| 填妥後送出                   | Console 印出通過驗證的 payload ✅                    |
 
 payload 含 `"writtenDate": "2026.08.??"`，證明不完整日期能正確通過驗證。
 
@@ -948,6 +950,14 @@ payload 含 `"writtenDate": "2026.08.??"`，證明不完整日期能正確通過
 - 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
 - 真正要能寫入，需要先決定搬到哪種有後端的環境
 
+Total cost: $196.51
+Total duration (API): 2h 21m 17s
+Total duration (wall): 23h 26m 10s
+Total code changes: 6572 lines added, 226 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 9.4k input, 576.2k output, 311.2m cache read, 2.6m cache write ($196.51)
+
 ### 下一步
 
 legacy 的頁面全部移植完了。之後可以做的方向：
@@ -955,4 +965,3 @@ legacy 的頁面全部移植完了。之後可以做的方向：
 1. **搬到有後端的環境**（Cloudflare Pages + Workers、Vercel 等），讓登入與編輯真正可用
 2. **編輯既有文章**：加 `/article/edit/[week]`，載入現有資料後修改
 3. 其他改善：無障礙檢查、實機測試
-
