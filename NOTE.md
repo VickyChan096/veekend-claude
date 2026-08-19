@@ -18,7 +18,87 @@
 | 10    | 2026-08-19 | 登入與編輯頁（示範）                                     | 9.4k input, 576.2k output / 9.4k input, 589.9k output | $196.51 / $205.90 |
 | 11    | 2026-08-19 | 內文版型速查對話框                                       | 9.4k input, 612.6k output                             | $219.82           |
 | 12    | 2026-08-19 | 大方向收尾（深色模式接上 header、標題結構、SEO、無障礙） | 11.8k input, 683.2k output                            | $235.59           |
-| 13    | 2026-08-19 | 內文切版對照 legacy 修正                                 |                                                       |                   |
+| 13    | 2026-08-19 | 內文切版對照 legacy 修正                                 | 12.0k input, 740.0k output                            | $248.52           |
+
+---
+
+## 第一大階段總結（Phase 1–13）
+
+### 做完了什麼
+
+把 `legacy-app`（jQuery + 靜態 `db.json` 的多頁式網站）整套重構成 Nuxt 4 SSG，
+部署在 **https://vickychan096.github.io/veekend-claude/**。legacy 的六個頁面全部移植完畢，
+資料改由 Google Sheets 供應，改內容不用碰程式碼。
+
+| 面向 | 結果 |
+| ---- | ---- |
+| 頁面 | 首頁、文章頁、搜尋結果、關於、登入、編輯、元件庫、404，共 389 個 prerender 路由 |
+| 元件 | `components/common/` 30 個 `Base*` 元件，`pages/example.vue` 一頁看完 |
+| 資料 | Google Sheets 四張表 → GAS Web App → 建置時抓取；未設定則退回本地 JSON |
+| 自動化 | 編輯試算表 → GAS 停手 60 秒 → `repository_dispatch` → 約 3～4 分鐘後上線 |
+| 效能 | 首頁 gzip **1672KB → 8.7KB**；封面圖手機尺寸 **453KB → 34KB** |
+| 品質 | `npm run check`（lockfile + typecheck）、`npm run lint`、`nuxt generate` 全綠 |
+
+### 幾個關鍵決定
+
+**不做「訪客即時打 API」。** 你原本期望頁面完全由 API 渲染、不必重新部署。實測 GAS 回應
+4～15 秒、靜態頁 0.66 秒，而且即時渲染會失去 SEO 與分享預覽，新文章網址還會 404。
+改成「編輯試算表 → 自動重建」，達成同樣的目的（不用碰程式碼）而沒有那些代價。
+
+**登入與編輯頁是示範用的。** GitHub Pages 只送檔案、不執行程式，所有判斷邏輯都得在瀏覽器裡跑，
+金鑰同理。這是架構限制，不是寫法問題。所以刻意分層——表單元件 → DTO（zod）→ Service，
+搬到有後端的環境時只要換最底層兩個檔案。
+
+**legacy 只給設計，002_View 給架構。** 這條分工從 Phase 1 定下來就沒動搖過，
+也是 Phase 13 能靠「把兩邊都跑起來逐個元素比數字」找出切版問題的原因。
+
+### 學到最多的三件事
+
+1. **`useAsyncData` 會吞掉錯誤。** GAS 掛掉時建置「成功」但只產出 12 個路由而不是 36 個。
+   要在 composable 主動檢查 `error.value` 並 `createError({ fatal: true })`。
+2. **Windows 的 `npm install` 會裁掉 Linux 專用相依**，本機 `npm ci` 全綠但 CI 秒炸。
+   踩了兩次才加上 `npm run deps:check`。
+3. **瀏覽器工具的呈現不等於真實狀態。** 背景分頁不觸發 lazy load、不推進 CSS transition，
+   截圖也會有合成假象。前後誤判了四次，現在的做法是先用 JS 量 computed styles，截圖只當輔助。
+
+### 沒有做的
+
+自動化測試（Phase 12 盤點時列出，你決定先跳過）、真正的寫入功能、編輯既有文章。
+
+---
+
+## 第二大階段 TODO
+
+依「現在就能做」到「要先搬家」排序。
+
+### A. 不需要換環境就能做
+
+- [ ] **內文細節收尾**（Phase 13 留下的兩個問題）
+  - 「點擊看大圖」要常駐還是維持 hover
+  - byline / briefing 的字重要不要為了對齊 legacy 而寫死 px
+- [ ] **逐頁對照 legacy**——文章頁比完了，首頁、搜尋結果、關於頁還沒用同樣的方法比過
+- [ ] **實機測試**——目前所有驗證都在桌機 Chrome，手機、平板、Safari 都還沒碰
+- [ ] **自動化測試**——至少把 `scripts/parse-articles.mjs` 與 `build-from-rows.mjs`
+      這兩份「同一套邏輯的兩份實作」用測試綁在一起，避免改一邊忘了另一邊
+- [ ] **無障礙複檢**——鍵盤走一遍全站、跑一次 Lighthouse
+- [ ] **編輯既有文章**（`/article/edit/[week]`）——目前編輯頁只能新增
+
+### B. 內容面
+
+- [ ] week 7～12 的「趕稿中」佔位頁補成真的文章
+- [ ] 圖片 alt 全面複檢（有些是從檔名帶出來的）
+
+### C. 要先搬到有後端的環境
+
+- [ ] **決定權限模型**——`doPost` 寫入 API 已在 GAS 端就緒但未接前端
+- [ ] **換掉 `useAuth` 與 `ArticleWriteService`**——DTO 與表單元件不用動
+- [ ] 上傳圖片（目前圖片是手動放進 `public/images/`）
+
+### D. 可選
+
+- [ ] 自訂網域（順便讓 robots.txt 真的生效——專案站的那份爬蟲讀不到）
+- [ ] 留言或訂閱（需要後端）
+
 
 ---
 
@@ -1346,12 +1426,17 @@ claude-opus-5: 11.8k input, 683.2k output, 380.1m cache read, 2.8m cache write (
 legacy 的 DOM 是這樣的：
 
 ```html
-<section class="articleStyle1">   <!-- 圖左文右 -->
-  <img>                            <!-- 50% -->
-  <div>                            <!-- 50%, padding-left 20px -->
+<section class="articleStyle1">
+  <!-- 圖左文右 -->
+  <img />
+  <!-- 50% -->
+  <div>
+    <!-- 50%, padding-left 20px -->
     <h4>丸林滷肉飯</h4>
     <h6>個人評分：3.9</h6>
-    <ul>電話／地址／營業時間</ul>
+    <ul>
+      電話／地址／營業時間
+    </ul>
   </div>
 </section>
 ```
@@ -1359,10 +1444,10 @@ legacy 的 DOM 是這樣的：
 **兩個 flex item。** 我當初把 parts 攤平成 section 的直接子元素，然後給每一個
 （h4、h6、ul）都設 `width: 50%`。四個 50% 的項目在 `flex-wrap: wrap` 下換成兩列：
 
-| | 第一列 | 第二列 |
-| - | ---- | ---- |
-| 之前 | 圖片(50%) + 景點名(50%) | **評分(50%)** + 清單(50%) |
-| legacy | 圖片(50%) + 文字區塊(50%) | — |
+|        | 第一列                    | 第二列                    |
+| ------ | ------------------------- | ------------------------- |
+| 之前   | 圖片(50%) + 景點名(50%)   | **評分(50%)** + 清單(50%) |
+| legacy | 圖片(50%) + 文字區塊(50%) | —                         |
 
 所以評分掉到圖片下面去了。`imageRight` 更慘——我用 `flex-direction: row-reverse`
 達成左右對調，但那會把**所有**元素一起倒過來，四個項目換行後圖片跑到左下角。
@@ -1370,7 +1455,7 @@ legacy 的 DOM 是這樣的：
 修法是照 legacy 把連續的文字類元素包成一個 `article-section__body`：
 
 ```ts
-const MEDIA_KINDS = new Set(['image', 'imageText', 'video'])
+const MEDIA_KINDS = new Set(["image", "imageText", "video"]);
 // 連續的文字元素合併成一個 body group，媒體維持 section 的直接子元素
 ```
 
@@ -1380,10 +1465,10 @@ CSS 只要負責寬度與 padding 方向。
 
 修好之後兩邊的數字完全一樣：
 
-| 版面 | legacy | 修正後 |
-| ---- | ------ | ------ |
-| `articleStyle1` / `imageLeft` | IMG x=30 386×241、DIV x=416 386×168 | 一模一樣 |
-| `articleStyle2` / `imageRight` | DIV x=30 386×216、A x=416 386×241 | 一模一樣 |
+| 版面                           | legacy                              | 修正後   |
+| ------------------------------ | ----------------------------------- | -------- |
+| `articleStyle1` / `imageLeft`  | IMG x=30 386×241、DIV x=416 386×168 | 一模一樣 |
+| `articleStyle2` / `imageRight` | DIV x=30 386×216、A x=416 386×241   | 一模一樣 |
 
 #### 順帶修好手機版的順序
 
@@ -1403,10 +1488,10 @@ Phase 12 我以為 `[註]` 飄到隔壁欄壓住地址是定位問題，其實�
 
 legacy 的 `_reset.scss` 重新定義過這兩個標籤，而 `db.json` 的內文就是照這套寫的：
 
-| 標籤 | legacy | 我之前 |
-| ---- | ------ | ------ |
-| `mark` | 紅色**波浪**底線（`#e60012`），背景透明 | 黃色螢光筆底 |
-| `u` | **刪除線** | 瀏覽器預設的底線 |
+| 標籤   | legacy                                  | 我之前           |
+| ------ | --------------------------------------- | ---------------- |
+| `mark` | 紅色**波浪**底線（`#e60012`），背景透明 | 黃色螢光筆底     |
+| `u`    | **刪除線**                              | 瀏覽器預設的底線 |
 
 所以「喝ㄎㄧㄤ什麼都好玩」該是被劃掉的吐槽，我這邊卻只是加了底線；
 「歐哩甕」該是紅色波浪線的重點，我這邊變成一塊黃色。已補進 `app/assets/scss/_reset.scss`，
@@ -1448,6 +1533,12 @@ legacy 的 `.articleStyle5` 只設一次 `text-align: center`，標題與說明�
 - **byline 與 briefing 的字重**：legacy 是 12.8px / `font-weight: 300`，
   我用 design token 的 14px / 400。差異很小，但要完全一致就得寫死尺寸，
   跟「不寫死 px 字級」的規則衝突。
+
+  Total cost: $248.52 Total duration (API): 3h 2m 35s
+  Total duration (wall): 1d 2h 2m
+  Total code changes: 7439 lines added, 322 lines removed Usage by model:
+  claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+  claude-opus-5: 12.0k input, 740.0k output, 398.5m cache read, 3.1m cache write ($248.52)
 
 ### 驗證結果
 
