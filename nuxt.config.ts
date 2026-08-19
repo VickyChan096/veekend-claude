@@ -31,6 +31,13 @@ export default defineNuxtConfig({
   ssr: true,
   nitro: {
     preset: 'github_pages',
+    // 登入與編輯頁完全靠 client 端狀態運作，不要預先渲染。
+    // 對齊 002_View 用 routeRules 關掉 ssr 的做法——autoImport 關著時
+    // definePageMeta 這個巨集 TypeScript 認不得，設定集中在這裡比較好維護。
+    routeRules: {
+      '/login': { ssr: false },
+      '/article/edit': { ssr: false },
+    },
     prerender: {
       // ipx 在建置時同時處理數百張圖，跟頁面 prerender 搶資源會讓隨機頁面
       // 冒出 [unhandled] 500——三次建置會掛一次。限制並行數換取穩定性。

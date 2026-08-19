@@ -808,6 +808,13 @@ week1/cover.jpg 453 KB
 
 - 登入頁與文章編輯頁仍是 `PagePlaceholder`
 - `doPost` 寫入 API 已就緒但未接前端（靜態站金鑰必然外洩，待權限模型決定）
+  Total cost: $152.44
+  Total duration (API): 2h 2m 54s
+  Total duration (wall): 22h 30m 33s
+  Total code changes: 5242 lines added, 220 lines removed
+  Usage by model:
+  claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+  claude-opus-5: 9.2k input, 506.6k output, 245.0m cache read, 1.7m cache write ($152.44)
 
 ### 下一步
 
