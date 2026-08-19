@@ -50,6 +50,7 @@ const rating = ref(4.2)
       <BaseChip text="美食" />
       <BaseChip text="展覽" styling="outlined" />
       <BaseChip text="戶外" styling="plain" />
+      <BaseChip text="#野餐" styling="tag" />
       <BaseChip text="可關閉" closable />
     </ExampleRow>
 

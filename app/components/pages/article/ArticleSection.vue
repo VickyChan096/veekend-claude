@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import BaseImage from '@/components/common/image/BaseImage.vue'
+import BaseRating from '@/components/common/rating/BaseRating.vue'
 import type { ArticlePart, SectionLayout } from '@/types/api/articleContent'
 
 /**
@@ -23,6 +24,19 @@ const isHalfWidth = computed(() => props.layout === 'imageLeft' || props.layout 
 const imageSizes = computed(() =>
   isHalfWidth.value ? 'sm:100vw md:512px' : 'sm:100vw md:1024px'
 )
+
+/**
+ * h6 在 legacy 一律是「個人評分：4.5」這種字串，滿分 5。
+ * 解析得出來就畫星星，解析不出來就原字照印——資料是人手打的，
+ * 不該因為某天有人寫成別的格式就讓整個區塊消失。
+ */
+const RATE_PATTERN = /評分\s*[:：]?\s*([\d.]+)/
+const parseRate = (text: string): number | null => {
+  const matched = text.match(RATE_PATTERN)
+  if (!matched) return null
+  const value = Number(matched[1])
+  return Number.isFinite(value) && value >= 0 && value <= 5 ? value : null
+}
 </script>
 
 <template>
@@ -35,7 +49,11 @@ const imageSizes = computed(() =>
         {{ part.text }}
       </h3>
       <p v-else-if="part.kind === 'heading' && part.level === 6" class="article-section__rate">
-        {{ part.text }}
+        <template v-if="parseRate(part.text) !== null">
+          <span class="article-section__rate-label">個人評分</span>
+          <BaseRating :model-value="parseRate(part.text)!" show-value />
+        </template>
+        <template v-else>{{ part.text }}</template>
       </p>
 
       <!-- eslint-disable-next-line vue/no-v-html -->
@@ -118,21 +136,20 @@ const imageSizes = computed(() =>
     margin-bottom: 10px;
   }
 
-  // 個人評分：黃色粗底線，右邊掛一個 [註] 小標
+  // 個人評分：黃色粗底線的標籤 + 星星，右邊掛一個 [註] 小標
   &__rate {
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 2px 8px;
+    align-items: center;
     margin-bottom: 10px;
-    text-decoration: underline;
-    text-decoration-color: var(--primary);
-    text-decoration-thickness: 8px;
-    text-decoration-skip-ink: none;
-    text-underline-offset: -4px;
 
+    // legacy 把 [註] 絕對定位在框的右邊界，但這個框在圖文各半的版面佔滿 50%，
+    // 結果 [註] 會飄到隔壁欄壓到文字。改成排在星星後面的一般 flex 子元素。
     &::before {
       content: '[註]';
-      position: absolute;
-      right: -25px;
+      order: 1;
       font-size: 0.6rem;
       color: var(--subtitle);
     }
@@ -141,8 +158,9 @@ const imageSizes = computed(() =>
       &:hover::after {
         content: '滿分5分';
         position: absolute;
-        top: 18px;
-        right: -45px;
+        top: 100%;
+        left: 0;
+        z-index: 1;
         width: 60px;
         padding: 4px;
         font-size: 0.6rem;
@@ -152,6 +170,15 @@ const imageSizes = computed(() =>
         border-radius: var(--border-radius-s);
       }
     }
+  }
+
+  // 底線只畫在文字上，星星不該被劃掉
+  &__rate-label {
+    text-decoration: underline;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 8px;
+    text-decoration-skip-ink: none;
+    text-underline-offset: -4px;
   }
 
   &__list li {

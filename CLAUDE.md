@@ -182,6 +182,7 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 - 建置前跑 `npm run check`（typecheck），失敗就不部署
 - actions 一律用 v5——v4 是為 Node 20 寫的，runner 會強制它跑在 Node 24 上
 - 本機重現正式建置：複製 `.env.example` 成 `.env.production` 填好 `NUXT_APP_BASE_URL`，跑 `npm run generate:gh`
+- `npm run generate` 結尾會跑 `scripts/generate-sitemap.mjs`，掃 `.output/public` 的 `index.html` 產出 sitemap.xml 與 robots.txt。沒設 `NUXT_PUBLIC_SITE_URL` 就跳過（本機建置沒有網址是正常的）
 
 踩過的坑：
 
@@ -199,11 +200,11 @@ push 到 `main` 就由 `.github/workflows/deploy.yml` 自動建置並發布。
 
 ## 現況
 
-Phase 1–10 完成：legacy 的頁面已全部移植，資料改用 Google Sheets，並補上示範用的登入與編輯頁。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
+Phase 1–12 完成：legacy 的頁面已全部移植，資料改用 Google Sheets，補上示範用的登入與編輯頁，並收尾了深色模式、標題結構、SEO 與無障礙。`nuxt generate`、`npm run check`、`npm run lint` 皆通過。
 
 已就緒：
 - 設定與樣式基礎——SSG、深色模式、design token、六階 typography mixin
-- `app/components/common/`——30 個共用元件；`app/pages/example.vue` 為展示頁
+- `app/components/common/`——30 個共用元件；`app/pages/example.vue` 為展示頁（footer 有連結）
 - `app/components/layouts/`——HeaderBar、FooterBar、ScrollToTopButton、SiteAside
 - `app/pages/index.vue`——輪播、文章列表（LOAD MORE）、景點地圖、側欄
 - `app/pages/article/[week].vue`——hero、結構化內文、燈箱、本週地圖、上下篇導覽
@@ -214,7 +215,11 @@ Phase 1–10 完成：legacy 的頁面已全部移植，資料改用 Google Shee
 - 內文解析——`npm run data:parse`（備份資料用）；正式內容改在 Sheets 編輯
 - 資產——`public/images/`（132 檔），建置時由 ipx 產生縮圖與 WebP
 - 效能——首頁 gzip 8.7KB（CSS 外部化前是 1672KB）；封面圖手機尺寸 34KB（原圖 453KB）
+- `app/error.vue`——自訂 404／錯誤頁。**不吃 layout**，header／footer 要自己放；按鈕用 `clearError({ redirect })`，用 NuxtLink 會留著錯誤狀態
+- SEO——`scripts/generate-sitemap.mjs` 在 generate 後產出 sitemap.xml
+- 無障礙——每頁剛好一個 `<h1>`（站名 logo 不是 h1）、`layouts/default.vue` 有 skip link、header 有深淺色切換鍵
 
 尚未處理：
 - 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
 - `doPost` 寫入 API 已就緒但未接前端——真正要能寫入，得先搬到有後端的環境
+- 沒有自動化測試（Phase 12 盤點時列出，你決定先跳過）

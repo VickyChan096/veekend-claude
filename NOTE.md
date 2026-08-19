@@ -16,7 +16,8 @@
 | 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output,                            | $99.39            |
 | 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output                             | $152.44           |
 | 10    | 2026-08-19 | 登入與編輯頁（示範）       | 9.4k input, 576.2k output / 9.4k input, 589.9k output | $196.51 / $205.90 |
-| 11    | 2026-08-19 | 內文版型速查對話框         |                            |         |
+| 11    | 2026-08-19 | 內文版型速查對話框         | 9.4k input, 612.6k output                             | $219.82           |
+| 12    | 2026-08-19 | 大方向收尾（深色模式接上 header、標題結構、SEO、無障礙） |                                                       |                   |
 
 ---
 
@@ -1042,19 +1043,19 @@ legacy 的頁面全部移植完了。之後可以做的方向：
 
 `section` 的五種版面：
 
-| 版面值 | 名稱 | 用了幾次 | 特性 |
-| --- | --- | --- | --- |
-| `imageLeft` | 圖左文右 | 12 | 景點介紹主力。圖文各半，圖片最高 300px |
-| `imageRight` | 文左圖右 | 11 | 同上但左右對調。連續景點交錯用，版面有節奏 |
-| `textFirst` | 文字在上、圖在下 | 10 | 先講故事再放照片。手機版自動把圖移到上方 |
-| `imageFirst` | 圖在上、文字在下 | 9 | 滿版圖不裁切 |
-| `video` | 影片區塊 | 7 | YouTube 嵌入，高度固定 350px |
+| 版面值       | 名稱             | 用了幾次 | 特性                                       |
+| ------------ | ---------------- | -------- | ------------------------------------------ |
+| `imageLeft`  | 圖左文右         | 12       | 景點介紹主力。圖文各半，圖片最高 300px     |
+| `imageRight` | 文左圖右         | 11       | 同上但左右對調。連續景點交錯用，版面有節奏 |
+| `textFirst`  | 文字在上、圖在下 | 10       | 先講故事再放照片。手機版自動把圖移到上方   |
+| `imageFirst` | 圖在上、文字在下 | 9        | 滿版圖不裁切                               |
+| `video`      | 影片區塊         | 7        | YouTube 嵌入，高度固定 350px               |
 
 另一種區塊型別：
 
-| | 用了幾次 | 特性 |
-| --- | --- | --- |
-| 三欄圖文（`gallery`） | 7 | 三個並排小卡，各有圖片、標題、說明。手機版變一欄 |
+|                       | 用了幾次 | 特性                                             |
+| --------------------- | -------- | ------------------------------------------------ |
+| 三欄圖文（`gallery`） | 7        | 三個並排小卡，各有圖片、標題、說明。手機版變一欄 |
 
 文章開頭的目錄是自動產生的，不算一種版型——填了「錨點 ID」就會自動列出該區塊的景點名稱。
 
@@ -1100,6 +1101,219 @@ legacy 的頁面全部移植完了。之後可以做的方向：
 - `nuxt generate` 389 routes、typecheck、lint 皆通過
 - 線上 `/`、`/login`、`/article/edit` 全部 200
 
+Total cost: $219.82
+Total duration (API): 2h 31m 21s
+Total duration (wall): 1d 0h 32m
+Total code changes: 7086 lines added, 228 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 9.4k input, 612.6k output, 354.9m cache read, 2.7m cache write ($219.82)
+
 ### 下一步
 
-沒有待辦。之後可做的方向仍是 Phase 10 列的那三個：搬到有後端的環境、編輯既有文章（`/article/edit/[week]`）、無障礙與實機測試。
+接 Phase 12：把先前放著沒收的大方向一次補齊。
+
+---
+
+## Phase 12 — 大方向收尾（2026-08-19）
+
+### 這個 Phase 在做什麼
+
+前 11 個 Phase 都在「把 legacy 搬過來」，功能面已經完整。這次是我先盤點還缺什麼，
+再由你挑要做的項目。盤點出 8 件，你決定：**1~6 與 8 做，7（自動化測試）先跳過**。
+
+| # | 項目 | 狀態 |
+| - | ---- | ---- |
+| 1 | 深淺色模式接到 header | ✅ |
+| 2 | 修正 `<h1>` 結構 | ✅ |
+| 3 | 標籤改用 BaseChip、評分改用 BaseRating | ✅ |
+| 4 | 自訂 404 頁 | ✅ |
+| 5 | 產生 sitemap.xml | ✅ |
+| 6 | 加 skip link | ✅ |
+| 7 | 自動化測試 | ⏭ 這次跳過 |
+| 8 | 讓 `/example` 找得到 | ✅ |
+
+---
+
+### 1. 深淺色模式接到 header
+
+`useThemeMode` 從 Phase 2 就寫好了（切 Vuetify 主題 + `<html data-theme>` 兩件事），
+但一直沒有任何 UI 叫得到它——等於寫了但沒人用。這次在主選單最後加一顆 `BaseIconButton`：
+
+```vue
+<BaseIconButton
+  :icon="isDark ? 'mdi:weather-sunny' : 'mdi:weather-night'"
+  :label="isDark ? '切換為淺色模式' : '切換為深色模式'"
+  size="small"
+  @click="toggleTheme"
+/>
+```
+
+圖示與 aria-label 都指向「按下去會變成什麼」，不是「現在是什麼」——這是切換鍵的慣例，
+不然螢幕閱讀器的使用者會不知道按了會發生什麼事。
+
+實測：按一下 → `data-theme="dark"`、`localStorage.veekend-theme="dark"`、
+Vuetify 換成 `v-theme--veekendDark`、`--surface` 變 `#1a1a1a`；換頁後仍是 dark。
+
+---
+
+### 2. 修正 `<h1>` 結構
+
+legacy 把站名 logo 包在 `<h1>` 裡（舊時代的 SEO 習慣）。後果是**每一頁的 h1 都是「Veekend」**，
+而真正的頁面主標題反而降級。搜尋引擎與螢幕閱讀器都是靠 h1 判斷「這頁在講什麼」。
+
+改法：
+
+- header 的 logo 改成 `<span class="header__mark">`，CSS 從 `h1 {}` 改成 `.header__mark {}`
+- 首頁本來沒有視覺上的主標題（第一屏是輪播），補一個 `.sr-only` 的 h1
+
+盤點後每頁剛好一個 h1：
+
+| 頁面 | h1 |
+| ---- | -- |
+| `/` | 週遊記 Veekend — 每週探索一個地區的旅行紀錄（視覺隱藏） |
+| `/article/[week]` | 文章標題 |
+| `/result` | 搜尋結果標題 |
+| `/about` | 關於 VC |
+| `/login` | 登入 |
+| `/article/edit` | 編輯文章 |
+| `/example` | Veekend 元件庫 |
+| `error.vue` | 找不到這一頁 |
+
+---
+
+### 3. 標籤改用 BaseChip、評分改用 BaseRating
+
+Phase 3 建的元件庫裡，`BaseChip` 與 `BaseRating` 一直只有 example page 在用。
+實際頁面各自手刻了一份，等於元件庫沒發揮作用。
+
+**hashTags → BaseChip**（`ArticleMapAndTags.vue`、`SiteAside.vue`）
+
+換過去才發現 BaseChip 現有的三種外觀（`primary` 黃底、`outlined` 黃框、`plain` 無底）
+**沒有一種是 legacy 標籤的樣子**——legacy 是灰底藥丸、hover 轉黃。
+與其在兩個頁面各自用 `:deep()` 蓋回來，不如在元件本身補一個 `styling="tag"`：
+
+```ts
+styling?: 'primary' | 'outlined' | 'plain' | 'tag'
+```
+
+底色由 BaseChip 自己的 `.is-tag` 給（`--divider` → hover `--primary`），Vuetify 只負責形狀。
+example page 也加上這個變體，免得日後又有人手刻一份。
+
+實測：兩處標籤都是 `background-color: rgb(238,238,238)`（`--divider` = `#eee`）、`border-radius: 4px`，
+點下去正確導到 `/result?tags=...`（中文標籤有 encode）。
+
+**`個人評分：3.9` → BaseRating**（`ArticleSection.vue`）：h6 在資料裡一律是這個格式，
+解析出數字後畫星星，右邊補數值。解析不出來就原字照印——資料是人手打的，
+不該因為哪天有人寫成別的格式就讓整段消失：
+
+```ts
+const RATE_PATTERN = /評分\s*[:：]?\s*([\d.]+)/
+const parseRate = (text: string): number | null => {
+  const matched = text.match(RATE_PATTERN)
+  if (!matched) return null
+  const value = Number(matched[1])
+  return Number.isFinite(value) && value >= 0 && value <= 5 ? value : null
+}
+```
+
+#### 順手修掉一個 legacy 就有的版面 bug
+
+原本 `[註]` 是 `position: absolute; right: -25px`。但這個框在「圖左文右」的版面佔滿 50% 寬，
+所以 `[註]` 會飄到隔壁欄**壓在地址文字上**（見下方對照）。既然這一列改成了 flex 容器，
+就把 `::before` 改成一般的 flex 子元素（`position: static; order: 1`），排在星星後面。
+
+| | 之前 | 之後 |
+| - | ---- | ---- |
+| `[註]` 位置 | x ≈ 416（壓到「地址：」） | 星星之後，x ≈ 250 |
+| 提示框 | `right: -45px` | `left: 0; top: 100%` |
+
+---
+
+### 4. 自訂 404 頁（`app/error.vue`）
+
+Nuxt 的預設錯誤頁長得完全不像這個站。新的 `error.vue`：大數字 + 標題 + 說明 + 兩顆按鈕。
+
+兩個要注意的地方：
+
+- **`error.vue` 不吃 layout**，header／footer 要自己放。這裡刻意不放，讓錯誤頁單純一點。
+- 按鈕用 `clearError({ redirect: '/' })` 而不是 `NuxtLink`。直接用連結會留著錯誤狀態，
+  導過去畫面還是錯誤頁。
+
+靜態站只會產出一份 `404.html`（SPA fallback 殼），路由對不上時由前端渲染 `error.vue`。
+實測 `/no-such-page`：`<title>404 找不到這一頁 | Veekend`、`meta[robots]=noindex`、
+按「回首頁」正確導回 `/`。
+
+---
+
+### 5. sitemap.xml（`scripts/generate-sitemap.mjs`）
+
+沒有裝 `@nuxtjs/sitemap`。理由是這個站是純靜態產出，**路由清單就攤在 `.output/public` 裡**，
+掃資料夾找 `index.html` 比多裝一個模組（還要跟 `autoImport: false` 相處）簡單得多。
+
+接在 `nuxt generate` 後面：
+
+```json
+"generate": "nuxt generate && node scripts/generate-sitemap.mjs"
+```
+
+幾個踩到的點：
+
+- **路由要補 base path。** 掃資料夾得到的是 `/article/1`，但站台在 `/veekend-claude/` 底下。
+  `NUXT_PUBLIC_SITE_URL` 只有網域（見 deploy.yml），所以要另外讀 `NUXT_APP_BASE_URL` 接起來。
+- **沒設 `NUXT_PUBLIC_SITE_URL` 就跳過**（exit 0，不是 exit 1）。本機建置沒有網址是正常的，
+  不該讓 build 掛掉，但要印出原因。
+- **`/login`、`/article/edit`、`/example` 排除**：登入是假的、編輯頁要登入、元件庫是給我自己看的。
+  `/200`、`/404` 是 SPA fallback 的殼，也排除。
+- **robots.txt 順手產出，但它在 GitHub Pages 專案站其實不會被讀到**——爬蟲只讀網域根目錄那一份，
+  這個站的會落在 `/veekend-claude/robots.txt`。還是產出來，是為了哪天換自訂網域時直接就位。
+  已在腳本註解標明，免得日後以為它有生效。
+
+本機實測產出 15 個網址（首頁 1.0、12 篇文章 0.8、`/about` 與 `/result` 0.5）。
+
+---
+
+### 6. skip link
+
+鍵盤使用者本來要 tab 過搜尋框 + 三組地區選單 + 關於 + 登入 + 主題鍵，才會進到內容。
+在 `layouts/default.vue` 最前面加一條平常藏在 `top: -100px`、`:focus` 才滑下來的連結，
+指向 `<main id="main" tabindex="-1">`。
+
+`tabindex="-1"` 是必要的：`<main>` 預設不可聚焦，沒有它的話焦點跳過去會落回 body，
+後續 tab 又從頭開始。同時要 `&:focus { outline: none }`，不然點內文時 main 會整塊被框起來。
+
+---
+
+### 8. 讓 `/example` 找得到
+
+元件庫不放進主選單（不是給讀者看的），但也不該只有知道網址的人才進得去。
+在 footer 的 copyright 上方加一條低調的「元件庫」連結。
+
+---
+
+### 這次的驗證方式
+
+又一次遇到 Phase 9、11 那個老問題：**分頁在背景時，截圖不能當證據**。
+這次截出來的畫面是一片黑、header 跑到頁面中間，但用 JS 量出來的值全是對的
+（`headerRect.top = 0`、`position: fixed`、只是 `scrollY = 1003` 而已）。
+關鍵指標是 `document.visibilityState === 'hidden'` 與 `document.hasFocus() === false`。
+
+同樣的原因，skip link 的 `:focus` 在自動化環境裡驗不出來（`element.matches(':focus')` 是 false，
+即使 `document.activeElement` 就是它）。改成直接檢查產出的 CSS 確認規則存在：
+
+```
+.site__skip[data-v-2d05f394]:focus{outline:var(--focus-visible);top:0}
+```
+
+**所以這次的規矩是：先用 JS 量 computed styles 與 getBoundingClientRect，截圖只當輔助。**
+
+### 驗證結果
+
+- `npm run check`（lockfile + typecheck）、`npm run lint` 皆通過
+- `nuxt generate` 389 routes，sitemap 15 個網址
+- 瀏覽器實測：深色模式切換與保存、404 頁、footer 連結、評分星星、標籤 chip、每頁一個 h1
+
+### 下一步
+
+沒有待辦。之後可做的方向：自動化測試（這次跳過的第 7 項）、搬到有後端的環境、
+編輯既有文章（`/article/edit/[week]`）、無障礙與實機測試。

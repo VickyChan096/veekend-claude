@@ -26,7 +26,11 @@ const links = [
         </a>
       </li>
     </ul>
-    <p class="footer__copyright">Copyright 2022 © Vicky Chan</p>
+    <div class="footer__meta">
+      <!-- 元件庫沒放在主選單裡（不是給讀者看的），但也不該只有知道網址的人才進得去 -->
+      <NuxtLink to="/example" class="footer__example">元件庫</NuxtLink>
+      <p class="footer__copyright">Copyright 2022 © Vicky Chan</p>
+    </div>
   </footer>
 </template>
 
@@ -103,6 +107,31 @@ const links = [
           width: 0;
         }
       }
+    }
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+  }
+
+  &__example {
+    @include body2-regular;
+    padding: 8px 0 0;
+    color: #7a7a7a;
+    text-decoration: underline;
+    transition: var(--transition-fast);
+
+    @include hover {
+      &:hover {
+        color: var(--primary);
+      }
+    }
+
+    &:focus-visible {
+      outline: var(--focus-visible);
     }
   }
 

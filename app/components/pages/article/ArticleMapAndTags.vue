@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import DestinationMap from '@/components/pages/index/DestinationMap.vue'
+import BaseChip from '@/components/common/chip/BaseChip.vue'
 import type { Destination } from '@/types/api/article'
 
 // legacy 的 .article__mapAndTags：本週景點地圖 + hashTags
@@ -30,7 +31,11 @@ defineProps<{
 
     <ul v-if="hashTags.length" class="article-map__tags">
       <li v-for="tag in hashTags" :key="tag">
-        <NuxtLink :to="{ path: '/result', query: { tags: tag } }">#{{ tag }}</NuxtLink>
+        <BaseChip
+          :text="`#${tag}`"
+          :to="`/result?tags=${encodeURIComponent(tag)}`"
+          styling="tag"
+        />
       </li>
     </ul>
   </section>

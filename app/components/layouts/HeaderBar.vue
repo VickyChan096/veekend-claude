@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'nuxt/app'
 import { useArticles } from '@/composables/pages/useArticles'
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
 import { useAlert } from '@/composables/common/useAlert'
+import { useThemeMode } from '@/composables/common/useThemeMode'
+import BaseIconButton from '@/components/common/button/BaseIconButton.vue'
 import type { Article } from '@/types/api/article'
 
 const { assetUrl } = useAssetUrl()
@@ -11,6 +13,7 @@ const router = useRouter()
 const route = useRoute()
 const { openAlert } = useAlert()
 const { groupedByCity } = await useArticles()
+const { isDark, toggle: toggleTheme } = useThemeMode()
 
 const navOpen = ref(false)
 const openMenu = ref<string | null>(null)
@@ -53,8 +56,15 @@ const districtLabel = (article: Article, showCity: boolean) =>
   <header class="header">
     <div class="header__inner">
       <div class="header__bar">
-        <NuxtLink to="/" class="header__logo">
-          <h1 :style="{ backgroundImage: `url(${assetUrl('images/logo.svg')})` }">Veekend</h1>
+        <NuxtLink to="/" class="header__logo" aria-label="Veekend 首頁">
+          <!--
+            logo 刻意不用 h1：一頁只該有一個 h1，而且該是頁面主標題而非站名。
+            legacy 用 h1 是舊時代的 SEO 習慣，現在反而讓頁面結構變得難讀。
+          -->
+          <span
+            class="header__mark"
+            :style="{ backgroundImage: `url(${assetUrl('images/logo.svg')})` }"
+          >Veekend</span>
           <img :src="assetUrl('images/logo-veekend.svg')" alt="Veekend" >
         </NuxtLink>
 
@@ -122,6 +132,15 @@ const districtLabel = (article: Article, showCity: boolean) =>
               <Icon name="mdi:login" class="menu__icon" aria-hidden="true" />
             </NuxtLink>
           </li>
+          <li class="menu">
+            <BaseIconButton
+              :icon="isDark ? 'mdi:weather-sunny' : 'mdi:weather-night'"
+              :label="isDark ? '切換為淺色模式' : '切換為深色模式'"
+              size="small"
+              class="menu__theme"
+              @click="toggleTheme"
+            />
+          </li>
         </ul>
       </nav>
     </div>
@@ -167,7 +186,8 @@ const districtLabel = (article: Article, showCity: boolean) =>
     align-items: center;
     color: var(--secondary);
 
-    h1 {
+    .header__mark {
+      display: block;
       width: 40px;
       height: 40px;
       overflow: hidden;

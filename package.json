@@ -5,8 +5,8 @@
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
-    "generate": "nuxt generate",
-    "generate:gh": "nuxt generate --dotenv .env.production",
+    "generate": "nuxt generate && node scripts/generate-sitemap.mjs",
+    "generate:gh": "nuxt generate --dotenv .env.production && node scripts/generate-sitemap.mjs",
     "preview": "nuxt preview",
     "check": "node scripts/check-lockfile.mjs && nuxt typecheck",
     "deps:check": "node scripts/check-lockfile.mjs",
@@ -15,7 +15,8 @@
     "data:parse": "node scripts/parse-articles.mjs",
     "sheets:export": "node scripts/export-sheets.mjs",
     "sheets:verify": "node scripts/verify-sheets-schema.mjs",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "sitemap": "node scripts/generate-sitemap.mjs"
   },
   "dependencies": {
     "maplibre-gl": "^6.4.0",

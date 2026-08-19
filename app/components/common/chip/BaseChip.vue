@@ -1,6 +1,8 @@
 <script lang="ts" setup>
+import { computed } from 'vue'
+
 // 對應 legacy 文章的 hashTags
-withDefaults(
+const props = withDefaults(
   defineProps<{
     text: string
     to?: string
@@ -8,7 +10,8 @@ withDefaults(
     closable?: boolean
     prependIcon?: string
     // Custom Options:
-    styling?: 'primary' | 'outlined' | 'plain'
+    // tag 是 legacy 文章 hashTags 的樣子：灰底藥丸，hover 轉黃
+    styling?: 'primary' | 'outlined' | 'plain' | 'tag'
   }>(),
   {
     to: undefined,
@@ -19,6 +22,13 @@ withDefaults(
   }
 )
 const emit = defineEmits<{ (e: 'close'): void }>()
+
+// tag 的底色由下面的 CSS 給，Vuetify 只負責形狀
+const chipVariant = computed(() => {
+  if (props.styling === 'outlined') return 'outlined'
+  if (props.styling === 'plain') return 'text'
+  return 'flat'
+})
 </script>
 
 <template>
@@ -27,9 +37,10 @@ const emit = defineEmits<{ (e: 'close'): void }>()
     :size="size"
     :closable="closable"
     :prepend-icon="prependIcon"
-    :variant="styling === 'primary' ? 'flat' : styling === 'outlined' ? 'outlined' : 'text'"
-    :color="styling === 'plain' ? undefined : 'primary'"
+    :variant="chipVariant"
+    :color="styling === 'primary' || styling === 'outlined' ? 'primary' : undefined"
     class="base-chip"
+    :class="{ 'is-tag': styling === 'tag' }"
     @click:close="emit('close')"
   >
     {{ text }}
@@ -41,5 +52,17 @@ const emit = defineEmits<{ (e: 'close'): void }>()
   @include body2-medium;
   color: var(--secondary);
   border-radius: var(--border-radius-s);
+}
+
+// legacy 的標籤：灰底、hover 轉黃
+.base-chip.is-tag {
+  background-color: var(--divider);
+  transition: var(--transition-fast);
+
+  @include hover {
+    &:hover {
+      background-color: var(--primary);
+    }
+  }
 }
 </style>

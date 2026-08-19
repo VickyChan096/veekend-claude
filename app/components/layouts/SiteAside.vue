@@ -5,10 +5,14 @@ import { useArticles } from '@/composables/pages/useArticles'
 import { useAssetUrl } from '@/composables/common/useAssetUrl'
 import { stripHtml } from '@/utils/common/text'
 import BaseImage from '@/components/common/image/BaseImage.vue'
+import BaseChip from '@/components/common/chip/BaseChip.vue'
 
 // legacy 的 js/aside.js。首頁、文章頁、搜尋結果頁共用。
 const { assetUrl } = useAssetUrl()
 const { articles, topHashTags } = await useArticles()
+
+// BaseChip 的 to 只收字串，所以自己組 query（標籤有中文，要 encode）
+const tagLink = (tag: string) => `/result?tags=${encodeURIComponent(tag)}`
 
 const socials = [
   { label: 'EMAIL', href: 'mailto:s6102161021@yahoo.com.tw', icon: 'images/info-mail.png' },
@@ -81,7 +85,7 @@ const popularPosts = computed(() =>
       <h2>HASHTAGS</h2>
       <ul>
         <li v-for="tag in topHashTags" :key="tag">
-          <NuxtLink :to="{ path: '/result', query: { tags: tag } }">{{ tag }}</NuxtLink>
+          <BaseChip :text="tag" :to="tagLink(tag)" styling="tag" />
         </li>
       </ul>
     </section>
@@ -285,21 +289,10 @@ const popularPosts = computed(() =>
       width: 100%;
     }
 
+    // 外觀交給 BaseChip，li 只負責排成一片標籤雲
     li {
-      @include body2-medium;
       display: inline-block;
-      padding: 2px 6px;
       margin: 0 4px 4px 0;
-      color: var(--secondary);
-      background-color: var(--divider);
-      border-radius: var(--border-radius-s);
-      transition: var(--transition-fast);
-
-      @include hover {
-        &:hover {
-          background-color: var(--primary);
-        }
-      }
     }
   }
 

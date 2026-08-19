@@ -30,6 +30,9 @@ useHead({
 
 <template>
   <div class="home">
+    <!-- 首頁沒有視覺上的主標題，但結構上需要一個 h1 給搜尋引擎與螢幕閱讀器 -->
+    <h1 class="sr-only">週遊記 Veekend — 每週探索一個地區的旅行紀錄</h1>
+
     <div class="home__hero">
       <HeroCarousel :articles="heroArticles" />
     </div>
