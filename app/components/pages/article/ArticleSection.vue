@@ -328,7 +328,9 @@ const imageSizes = computed(() =>
   }
 }
 
-// 全寬圖 + 文字
+// 全寬圖 + 文字。
+// ⚠ 這兩種在桌機版的排法**完全相同**——實際順序取決於 parts 的順序，
+//   版面值只影響手機版。命名是給編輯的人看的意圖，不是 CSS 差異。
 .is-imageFirst,
 .is-textFirst {
   .article-section__image {
@@ -336,6 +338,7 @@ const imageSizes = computed(() =>
   }
 }
 
+// 手機版把圖片移到文字上方，讓人先看到照片再讀說明
 .is-textFirst {
   @include mobile {
     display: flex;

@@ -8,6 +8,7 @@ import BaseButton from '@/components/common/button/BaseButton.vue'
 import BaseDatepicker from '@/components/common/date/BaseDatepicker.vue'
 import RepeaterField from '@/components/common/form/RepeaterField.vue'
 import BlockEditor from '@/components/pages/edit/BlockEditor.vue'
+import LayoutGuideDialog from '@/components/pages/edit/LayoutGuideDialog.vue'
 import { useAuth } from '@/composables/common/useAuth'
 import { useAlert } from '@/composables/common/useAlert'
 import { articleWriteService } from '@/services/pages/ArticleWriteService'
@@ -70,6 +71,7 @@ const hashTagsText = computed<string | number | null>({
   },
 })
 
+const layoutGuideOpen = ref(false)
 const errors = ref<{ path: string; message: string }[]>([])
 const submitting = ref(false)
 
@@ -232,7 +234,16 @@ useHead({ title: '編輯文章 | Veekend' })
       </section>
 
       <section class="edit__section">
-        <h2>內文</h2>
+        <div class="edit__section-head">
+          <h2>內文</h2>
+          <BaseButton
+            text="版型速查"
+            styling="secondary"
+            size="small"
+            prepend-icon="mdi:view-dashboard-outline"
+            @click="layoutGuideOpen = true"
+          />
+        </div>
         <RepeaterField
           v-model="form.blocks"
           label="內文區塊"
@@ -262,6 +273,8 @@ useHead({ title: '編輯文章 | Veekend' })
         <p class="edit__hint">按 F12 打開開發者工具的 Console 分頁看結果</p>
       </div>
     </form>
+
+    <LayoutGuideDialog v-model="layoutGuideOpen" />
   </div>
 </template>
 
@@ -318,12 +331,22 @@ useHead({ title: '編輯文章 | Veekend' })
     flex-direction: column;
     gap: 20px;
 
-    > h2 {
+    > h2,
+    > .edit__section-head {
       @include head2-bold;
       padding-bottom: 8px;
       color: var(--title);
       border-bottom: 2px solid var(--primary);
     }
+  }
+
+  // 標題與「版型速查」按鈕同一列
+  &__section-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
   }
 
   &__grid {

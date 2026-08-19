@@ -4,18 +4,18 @@
 
 ## 總覽
 
-| Phase | 日期       | 內容                       | Tokens                     | 費用    |
-| ----- | ---------- | -------------------------- | -------------------------- | ------- |
-| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                            |         |
-| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output   | $4.59   |
-| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output  | $14.04  |
-| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output, | $23.13  |
-| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output  | $36.68  |
-| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output, | $53.97  |
-| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output  | $74.10  |
-| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output, | $99.39  |
-| 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output  | $152.44 |
-| 10    | 2026-08-19 | 登入與編輯頁（示範）       | 9.4k input, 576.2k output  | $196.51 |
+| Phase | 日期       | 內容                       | Tokens                                                | 費用              |
+| ----- | ---------- | -------------------------- | ----------------------------------------------------- | ----------------- |
+| 1     | 2026-08-18 | 專案調查與 CLAUDE.md 改寫  |                                                       |                   |
+| 2     | 2026-08-18 | 基礎建設                   | 1.7k input, 50.0k output                              | $4.59             |
+| 3     | 2026-08-18 | 共用元件庫與 Example page  | 2.3k input, 137.7k output                             | $14.04            |
+| 4     | 2026-08-18 | 首頁與 layout 移植         | 3.0k input, 187.0k output,                            | $23.13            |
+| 5     | 2026-08-18 | 文章頁移植                 | 3.7k input, 240.2k output                             | $36.68            |
+| 6     | 2026-08-18 | 部署上線 GitHub Pages      | 4.8k input, 288.3k output,                            | $53.97            |
+| 7     | 2026-08-18 | 搜尋結果頁與關於頁         | 5.0k input, 318.5k output                             | $74.10            |
+| 8     | 2026-08-18 | Google Sheets + GAS 資料庫 | 7.2k input, 392.9k output,                            | $99.39            |
+| 9     | 2026-08-18 | 效能與分享優化             | 9.2k input, 506.6k output                             | $152.44           |
+| 10    | 2026-08-19 | 登入與編輯頁（示範）       | 9.4k input, 576.2k output / 9.4k input, 589.9k output | $196.51 / $205.90 |
 
 ---
 
@@ -945,7 +945,6 @@ payload 含 `"writtenDate": "2026.08.??"`，證明不完整日期能正確通過
 
 `nuxt generate` 389 routes、typecheck、eslint 皆通過。
 
-
 ### 部署時又踩了同一個坑
 
 Phase 10 的兩次推送 CI 都失敗，錯誤與 Phase 6 **完全相同**：
@@ -986,11 +985,12 @@ Phase 6 那次因為讀不到 job log，盲猜了三輪才找到原因。當時�
 
 ### 線上驗證
 
-| 檢查 | 結果 |
-| --- | --- |
-| 七個頁面（含 `/login`、`/article/edit`） | 全部 200 |
-| 登入與編輯頁 | 4.6KB client-only 空殼，符合 `ssr: false` |
-| 首頁 | 54KB，12 篇文章連結都在 |
+| 檢查                                     | 結果                                      |
+| ---------------------------------------- | ----------------------------------------- |
+| 七個頁面（含 `/login`、`/article/edit`） | 全部 200                                  |
+| 登入與編輯頁                             | 4.6KB client-only 空殼，符合 `ssr: false` |
+| 首頁                                     | 54KB，12 篇文章連結都在                   |
+
 ### 待確認／未完成
 
 - 編輯頁只能新增，還不能載入既有文章來修改（要做的話是 `/article/edit/[week]`）
@@ -1003,6 +1003,15 @@ Total code changes: 6572 lines added, 226 lines removed
 Usage by model:
 claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
 claude-opus-5: 9.4k input, 576.2k output, 311.2m cache read, 2.6m cache write ($196.51)
+
+修改後
+Total cost: $205.90
+Total duration (API): 2h 25m 10s
+Total duration (wall): 1d 0h 3m
+Total code changes: 6708 lines added, 226 lines removed
+Usage by model:
+claude-haiku-4-5: 1.8k input, 36 output, 0 cache read, 0 cache write ($0.0020)
+claude-opus-5: 9.4k input, 589.9k output, 328.9m cache read, 2.7m cache write ($205.90)
 
 ### 下一步
 
